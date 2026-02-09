@@ -2,7 +2,7 @@
 
 Tracking **$23.9B in tokenized real-world assets** across 136 protocols, 67 blockchains, and 800+ on-chain whale transfers.
 
-**[Live Dashboard on Dune →](https://dune.com/adu0x/rwa-analytics)**
+**[Live Dashboard on Dune →](https://dune.com/adu0x/rwa-analytics-real-world-assets-tracker)**
 
 ---
 
