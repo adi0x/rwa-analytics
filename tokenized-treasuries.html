@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tokenized Treasuries: The Complete Guide to the Biggest Opportunity in DeFi Right Now — RWA Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Sora:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-primary: #0a0a0f;
+    --bg-secondary: #12121a;
+    --bg-card: #16161f;
+    --accent: #00ff88;
+    --text-primary: #e8e8ed;
+    --text-secondary: #8888a0;
+    --text-muted: #55556a;
+    --border: #1e1e2e;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Sora', sans-serif;
+    line-height: 1.8;
+    overflow-x: hidden;
+  }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg-primary); }
+  ::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 3px; }
+
+  /* Nav */
+  .nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    padding: 1rem 2rem;
+    background: rgba(10, 10, 15, 0.9);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .nav a { color: var(--text-secondary); text-decoration: none; font-size: 0.85rem; transition: color 0.2s; }
+  .nav a:hover { color: var(--accent); }
+  .nav .logo { font-weight: 700; color: var(--text-primary); font-size: 1rem; }
+  .nav .logo span { color: var(--accent); }
+
+  /* Hero */
+  .article-hero {
+    padding: 8rem 2rem 4rem;
+    max-width: 800px;
+    margin: 0 auto;
+    text-align: center;
+  }
+  .article-num {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 3px;
+    color: var(--accent);
+    opacity: 0.7;
+    margin-bottom: 1.5rem;
+  }
+  .article-hero h1 {
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 800;
+    line-height: 1.2;
+    margin-bottom: 1.5rem;
+  }
+  .article-subtitle {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    font-style: italic;
+    max-width: 600px;
+    margin: 0 auto 2rem;
+    line-height: 1.7;
+  }
+
+  /* Content */
+  .article-content {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 2rem 6rem;
+  }
+  .article-content h2 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin: 3rem 0 1rem;
+    color: var(--text-primary);
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+  .article-content h3 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin: 2rem 0 0.75rem;
+    color: var(--accent);
+  }
+  .article-content p {
+    margin-bottom: 1rem;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+  }
+  .article-content strong {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+  .article-content hr {
+    border: none;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--border), transparent);
+    margin: 3rem 0;
+  }
+  .article-list {
+    list-style: none;
+    margin: 0.5rem 0 1.5rem 0;
+    padding: 0;
+  }
+  .article-list li {
+    padding: 0.4rem 0 0.4rem 1.5rem;
+    position: relative;
+    color: var(--text-secondary);
+    font-size: 0.92rem;
+  }
+  .article-list li::before {
+    content: '▸';
+    position: absolute;
+    left: 0;
+    color: var(--accent);
+    font-size: 0.8rem;
+  }
+
+  /* Tables */
+  .table-wrap {
+    overflow-x: auto;
+    margin: 1.5rem 0;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+  th {
+    background: var(--bg-card);
+    color: var(--accent);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 0.9rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 0.75rem 1rem;
+    color: var(--text-secondary);
+    border-bottom: 1px solid rgba(30,30,46,0.5);
+  }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* Footer */
+  .article-footer {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 2rem 2rem 4rem;
+    border-top: 1px solid var(--border);
+    text-align: center;
+  }
+  .article-footer a {
+    display: inline-block;
+    padding: 0.75rem 2rem;
+    background: var(--accent);
+    color: var(--bg-primary);
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    transition: opacity 0.2s;
+  }
+  .article-footer a:hover { opacity: 0.85; }
+
+  @media (max-width: 768px) {
+    .article-hero { padding: 6rem 1.25rem 3rem; }
+    .article-content { padding: 0 1.25rem 4rem; }
+  }
+
+  body::after {
+    content: '';
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 9999;
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="../index.html" class="logo"><span>RWA</span> Analytics</a>
+  <a href="../index.html">← Back to Dashboard</a>
+</nav>
+
+<section class="article-hero">
+  <div class="article-num mono">RESEARCH 01</div>
+  <h1>Tokenized Treasuries: The Complete Guide to the Biggest Opportunity in DeFi Right Now</h1>
+</section>
+
+<article class="article-content">
+<p class="article-subtitle">How blockchain is turning $26 trillion in U.S. government bonds into a 24/7, borderless financial instrument — and why it matters to you.</p>
+<hr>
+<h2>The Simple Version</h2>
+<p>Imagine you could buy a piece of a U.S. Treasury bond — the safest investment on the planet — for as little as $5. No bank account required. No broker. No waiting 2 days for it to settle. Just connect your crypto wallet and start earning 4–5% yield, backed by the full faith of the U.S. government.</p>
+<p>That's tokenized Treasuries.</p>
+<p>Two years ago, this market barely existed. Today, it's worth over <strong>$7.5 billion</strong> and growing fast. BlackRock, Franklin Templeton, and Ondo Finance now manage billions in these products. And the market for tokenized assets overall is projected to hit <strong>$2 trillion by 2030</strong>.</p>
+<p>This article breaks down everything you need to know — what tokenized Treasuries are, how they work under the hood, who the major players are, what risks exist, and why this might be the most important shift happening in crypto right now.</p>
+<hr>
+<h2>What Are Tokenized Treasuries?</h2>
+<p>Let's start from scratch.</p>
+<p>A <strong>U.S. Treasury bond</strong> (or T-bill) is essentially an IOU from the U.S. government. You lend money to the government, and they pay you back with interest. It's considered the safest investment in the world because the U.S. government has never defaulted on its debt.</p>
+<p>Traditionally, buying Treasuries requires a brokerage account, minimum investments of $1,000+, and settlement takes 1–2 business days through a complex chain of intermediaries — primary dealers, the DTCC, clearinghouses, and custodians.</p>
+<p><strong>Tokenized Treasuries</strong> take these same government bonds and represent them as digital tokens on a blockchain. Each token is backed 1:1 by real Treasury bills held in custody by a regulated institution.</p>
+<p>Think of it like this: the physical bond sits in a vault, and a digital "receipt" (the token) lives on the blockchain. When you hold the token, you own the economic rights to that bond — the yield, the principal, everything.</p>
+<hr>
+<h2>How Does It Actually Work?</h2>
+<p>Here's the step-by-step process:</p>
+<p><strong>Step 1 — Issuer buys the bonds.</strong> A licensed financial institution (like BlackRock or Ondo Finance) purchases U.S. Treasury bills from the government through normal channels.</p>
+<p><strong>Step 2 — Bonds go into custody.</strong> The purchased Treasuries are held by a qualified custodian — a regulated entity like Bank of New York Mellon — that keeps the assets separate from the issuer's own funds. This protects you if the issuer ever goes bankrupt.</p>
+<p><strong>Step 3 — Tokens are minted.</strong> For every dollar of Treasuries held in custody, equivalent tokens are minted on the blockchain. These tokens are ERC-20 compatible, meaning they work across the Ethereum ecosystem.</p>
+<p><strong>Step 4 — You buy the tokens.</strong> You swap stablecoins (like USDC) for these Treasury tokens through the issuer's platform or a DeFi protocol.</p>
+<p><strong>Step 5 — You earn yield.</strong> The underlying Treasury bills generate interest. That yield gets passed to you in one of two ways: either the token's price gradually increases (price appreciation model), or additional tokens are deposited into your wallet automatically (rebasing model).</p>
+<p><strong>Step 6 — Redemption.</strong> When you want out, you burn your tokens and receive stablecoins back. The issuer redeems the corresponding Treasury position. Some platforms offer instant redemption; others take 1–3 business days.</p>
+<hr>
+<h2>Why Does This Matter? TradFi vs. DeFi</h2>
+<p>To understand why tokenized Treasuries are a big deal, compare the traditional process with the blockchain version:</p>
+<div class="table-wrap"><table><thead><tr><th>Feature</th><th>Traditional Treasuries</th><th>Tokenized Treasuries</th></tr></thead><tbody><tr><td><strong>Settlement Time</strong></td><td>T+2 days (two business days)</td><td>Near-instant (minutes)</td></tr><tr><td><strong>Minimum Investment</strong></td><td>$1,000+ through brokerages</td><td>As low as $5</td></tr><tr><td><strong>Trading Hours</strong></td><td>9:00 AM – 5:00 PM ET, weekdays only</td><td>24/7/365</td></tr><tr><td><strong>Intermediaries</strong></td><td>5–7 middlemen (broker, dealer, DTCC, custodian, etc.)</td><td>Smart contract + custodian</td></tr><tr><td><strong>Fees</strong></td><td>0.5–1.5% management fees</td><td>0.15–0.50%</td></tr><tr><td><strong>Access</strong></td><td>Requires bank account, brokerage, KYC</td><td>Crypto wallet (some require KYC)</td></tr><tr><td><strong>Composability</strong></td><td>None — bonds sit idle</td><td>Can be used as collateral in DeFi</td></tr></tbody></table></div>
+<p>The last point — <strong>composability</strong> — is the game-changer. In the traditional world, if you own Treasury bonds, they just sit there generating yield. In DeFi, tokenized Treasuries can be used as collateral on Aave, supplied to lending protocols, or composed into structured products. Your "safe" asset suddenly becomes a productive building block for your entire portfolio.</p>
+<hr>
+<h2>The $245 Billion Yield Gap</h2>
+<p>Here's a stat that should make you pay attention:</p>
+<p>The stablecoin market is worth over <strong>$307 billion</strong>. Of that, roughly <strong>80%</strong> — about $245 billion — earns absolutely zero yield. It just sits in wallets doing nothing.</p>
+<p>Meanwhile, tokenized Treasuries pay <strong>4–5% APY</strong>, backed by the U.S. government.</p>
+<p>That $245 billion sitting idle isn't just a gap. It's the single biggest yield opportunity in crypto right now. Every dollar of idle USDC that moves into a tokenized Treasury product is a dollar that starts generating government-backed returns.</p>
+<p>This is exactly why MakerDAO held approximately $900 million in RWA collateral (mostly Treasuries) by mid-2025 to back its DAI stablecoin. It's why Frax's sFRAX vault directly purchases Treasuries and passes through the yield. The smart money has already figured this out.</p>
+<hr>
+<h2>The Market Today: Who's Winning?</h2>
+<p>The tokenized Treasury market has consolidated around several major players. Here's who matters:</p>
+<h3>BlackRock — BUIDL (USD Institutional Digital Liquidity Fund)</h3>
+<p>BlackRock's BUIDL fund launched in March 2024 and exploded to over <strong>$2.3 billion</strong> in assets. It represents roughly 32% of the entire tokenized Treasury market. BUIDL invests in cash, U.S. Treasuries, and repos, with Bank of New York Mellon handling custody. The minimum investment is $250,000, positioning it squarely for institutional investors. Redemptions are made in USDC.</p>
+<p>BUIDL is significant because it's BlackRock — the world's largest asset manager with $10+ trillion under management — putting its full weight behind tokenization.</p>
+<h3>Ondo Finance — USDY and OUSG</h3>
+<p>Ondo Finance has become the leading crypto-native player in tokenized Treasuries, managing over <strong>$2.5 billion</strong> in TVL with 404% year-over-year growth. They offer two main products:</p>
+<p><strong>USDY</strong> (US Dollar Yield) — A yield-bearing stablecoin-like product backed by short-term Treasuries. Aimed at retail and DeFi users, with lower minimums than BUIDL.</p>
+<p><strong>OUSG</strong> (Ondo US Government) — Direct exposure to short-term U.S. Treasuries, designed for institutional investors.</p>
+<p>Ondo has expanded aggressively across chains, and recently launched tokenized stock products as well.</p>
+<h3>Franklin Templeton — BENJI</h3>
+<p>Franklin Templeton, a $1.5 trillion asset manager, launched the first U.S.-registered fund to use a public blockchain for processing transactions and recording share ownership. Their BENJI token represents shares in the Franklin OnChain U.S. Government Money Fund. It was one of the earliest institutional entries into tokenized Treasuries.</p>
+<h3>Hashnote — USYC</h3>
+<p>Hashnote's USYC has grown rapidly, reaching over <strong>$1.3 billion</strong>. It's a tokenized money-market fund offering roughly 5% APY on short-term Treasuries, available across multiple blockchains.</p>
+<h3>Other Players</h3>
+<p><strong>Superstate</strong> (USTB), <strong>WisdomTree</strong>, <strong>Spiko</strong> ($500M+ in tokenized money market funds), <strong>Ethena</strong> (USDtb), and several others are competing in this space. The total ecosystem now spans <strong>49 products</strong> across multiple blockchains.</p>
+<hr>
+<h2>The Technical Architecture</h2>
+<p>For those who want to understand what's happening under the hood, tokenized Treasuries rely on several key technical components.</p>
+<h3>ERC-3643: Compliance at the Token Level</h3>
+<p>Unlike regular ERC-20 tokens that anyone can freely trade, tokenized Treasury tokens need to comply with securities regulations. This is where <strong>ERC-3643</strong> comes in.</p>
+<p>ERC-3643 (originally called T-REX, or Token for Regulated Exchanges) is an Ethereum token standard specifically designed for regulated assets. It enforces compliance directly at the smart contract level:</p>
+<p><strong>Identity verification</strong> — Only wallets that have been verified through KYC/AML checks can hold or transfer the tokens. This is managed through an on-chain identity system called ONCHAINID.</p>
+<p><strong>Transfer restrictions</strong> — Before any transaction executes, the smart contract checks if both sender and receiver meet the compliance rules. If they don't, the transfer is automatically blocked.</p>
+<p><strong>Issuer controls</strong> — Issuers retain the ability to freeze tokens, force transfers (for legal compliance), and recover tokens if an investor loses access to their wallet.</p>
+<p>To date, over <strong>$32 billion</strong> in real-world assets have been tokenized using ERC-3643. The SEC Chairman has cited it as an example of how compliance can be enforced on tokenized assets, and it's being proposed as an ISO international standard.</p>
+<h3>Chainlink CCIP: The Cross-Chain Bridge</h3>
+<p>One of the biggest challenges for tokenized assets is that they need to work across multiple blockchains. A Treasury token on Ethereum needs to be usable on Solana, Arbitrum, Base, and other networks.</p>
+<p><strong>Chainlink's Cross-Chain Interoperability Protocol (CCIP)</strong> solves this. It's the infrastructure layer that enables tokenized assets to move securely between blockchains. Think of it as the highway system connecting different blockchain "cities."</p>
+<p>Key features include:</p>
+<p><strong>Zero-slippage transfers</strong> — Unlike traditional bridges that use liquidity pools, CCIP uses burn/mint mechanisms so tokens can transfer instantly without size limits or slippage.</p>
+<p><strong>Privacy preservation</strong> — CCIP's Private Transactions feature keeps sensitive data — amounts, counterparties, transaction details — encrypted. This is critical for institutional adoption, where banks can't have their transactions visible on a public blockchain.</p>
+<p><strong>60+ blockchain connections</strong> — A single integration connects to over 60 public and private blockchains.</p>
+<p>In 2025, CCIP became the default interoperability standard for tokenized assets. SWIFT — the messaging system used by 11,000+ banks globally — went live with CCIP integration, enabling banks to transact with tokenized assets directly through their existing infrastructure. Coinbase selected CCIP as its exclusive bridge for $7 billion in wrapped assets. Ondo, Spiko, and dozens of others adopted it as their cross-chain standard.</p>
+<h3>Chainlink Proof of Reserve</h3>
+<p>Another critical piece of infrastructure is <strong>Chainlink Proof of Reserve</strong>, which provides real-time, on-chain verification that the tokens are actually backed by the claimed assets. Instead of trusting an issuer's quarterly report, anyone can verify the collateral backing at any time. This is transparency that traditional finance simply cannot offer.</p>
+<hr>
+<h2>Three Challenges That Must Be Solved</h2>
+<p>Despite the explosive growth, tokenized Treasuries face three fundamental problems that need solving before they can reach mainstream adoption:</p>
+<h3>1. The Data and Compliance Problem</h3>
+<p>Tokenized securities are still securities. They must comply with KYC/AML regulations, investor accreditation requirements, and jurisdictional restrictions. The challenge is doing all of this on-chain, automatically, across multiple jurisdictions with different laws.</p>
+<p>The U.S., EU (under MiCA), Singapore, and Switzerland all have different regulatory frameworks. A token that's compliant in one jurisdiction might not be in another. Standards like ERC-3643 are helping, but the regulatory patchwork remains a friction point.</p>
+<h3>2. The Liquidity Problem</h3>
+<p>Tokenized Treasuries are growing fast, but secondary market liquidity is still thin compared to the $1 trillion+ daily volume in traditional Treasury markets. Many tokenized products can only be redeemed through the issuer — there isn't yet a deep, decentralized market where you can instantly sell large positions.</p>
+<p>Without active market-making or buyback programs, tokenized assets can sit idle. This is similar to what happened with early NFT projects — the novelty of tokenization alone doesn't create liquidity.</p>
+<h3>3. The Cross-Chain Synchronization Problem</h3>
+<p>When a Treasury token exists on multiple blockchains (Ethereum, Solana, Arbitrum), keeping the supply, ownership records, and compliance state synchronized across all chains is extremely complex. If someone redeems on Ethereum, the Solana supply needs to update. If a wallet gets flagged for sanctions on one chain, it needs to be blocked everywhere.</p>
+<p>CCIP and similar protocols are addressing this, but it remains an active engineering challenge.</p>
+<hr>
+<h2>How Tokenized Treasuries Are Already Being Used in DeFi</h2>
+<p>Tokenized Treasuries aren't just sitting in wallets earning yield. They're becoming foundational building blocks across DeFi:</p>
+<p><strong>Backing stablecoins</strong> — MakerDAO held approximately $900 million in Treasury-backed RWA collateral to back its DAI stablecoin by mid-2025. Instead of relying purely on volatile crypto collateral, DAI is now partially backed by the safest asset in the world.</p>
+<p><strong>Collateral for lending</strong> — On protocols like Aave and Morpho, users can deposit tokenized Treasuries as collateral to borrow other assets. This lets you maintain exposure to Treasury yields while accessing liquidity for other investments.</p>
+<p><strong>Yield strategies</strong> — On Pendle and similar platforms, tokenized Treasury yields are being split, traded, and composed into structured rate products. These platforms are becoming the price-discovery layer for short-term interest rates in DeFi.</p>
+<p><strong>Institutional collateral</strong> — J.P. Morgan's Tokenized Collateral Network enables tokenized fund shares (including Treasury-backed funds) to be pledged as collateral in real-time, replacing the multi-day settlement process in traditional markets.</p>
+<hr>
+<h2>The GENIUS Act and Regulatory Clarity</h2>
+<p>In 2025, the <strong>GENIUS Act</strong> (Guiding and Establishing National Innovation for U.S. Stablecoins) provided significant regulatory clarity for the stablecoin market. By establishing clear rules for stablecoin issuance and reserves, the law made it safer and cheaper for people to trade between stablecoins and tokenized assets.</p>
+<p>This had a direct impact on tokenized Treasuries. Clearer stablecoin regulation means more confidence in the on/off ramps between dollars and Treasury tokens. When you know USDC is properly regulated and backed, you're more comfortable swapping it for USDY.</p>
+<p>The U.S. Treasury Department itself acknowledged in its 2024 TBAC report that responsible tokenization could expand participation in government debt markets while maintaining investor protections.</p>
+<hr>
+<h2>Who Is This For?</h2>
+<p>Tokenized Treasuries aren't just for crypto whales or institutions. Different users benefit in different ways:</p>
+<p><strong>For the crypto-native investor</strong> — If you're holding stablecoins on-chain, tokenized Treasuries are the easiest way to earn risk-free yield instead of letting your money sit idle. It's the difference between your USDC earning 0% and earning 4.5%.</p>
+<p><strong>For the DeFi power user</strong> — Tokenized Treasuries give you a stable, yield-bearing collateral asset. Use it on Aave, compose it on Pendle, or hedge your portfolio with the safest asset class in finance.</p>
+<p><strong>For institutions</strong> — Faster settlement, lower costs, 24/7 access, and programmable collateral management. J.P. Morgan, Fidelity, and dozens of banks are already building this into their operations.</p>
+<p><strong>For the developing world</strong> — A farmer in Nigeria or a teacher in Indonesia can now access U.S. government bond yields from their phone. No bank account, no minimum investment, no geographic restrictions. This is genuine financial democratization.</p>
+<hr>
+<h2>The Bigger Picture: Why This Is Just the Beginning</h2>
+<p>Let's zoom out.</p>
+<p>The global bond market is worth <strong>$130 trillion</strong>. The real estate market is <strong>$330 trillion</strong>. Global equities are <strong>$100+ trillion</strong>. Today, tokenized assets represent about <strong>$24 billion</strong> — that's 0.004% of just the bond market alone.</p>
+<p>Forecasts vary, but most credible estimates project the tokenized asset market reaching <strong>$2–18.9 trillion by 2030–2033</strong>. Even the conservative end of that range represents 100x growth from today.</p>
+<p>Tokenized Treasuries are the tip of the spear. They're the simplest, safest, most regulated category of tokenized assets. If tokenization can't work for Treasuries — the most liquid, most trusted financial instrument on earth — it can't work for anything.</p>
+<p>But it is working. And the holders are growing: tokenized Treasury holders surged <strong>660% to 13,200</strong> since January 2024, according to recent data.</p>
+<p>The question isn't whether tokenization will transform finance. The question is how fast.</p>
+<hr>
+<h2>Start Exploring</h2>
+<p>If you want to track the tokenized Treasury market in real-time, here are the best resources:</p>
+<p><strong>rwa.xyz</strong> — The most comprehensive data dashboard for all tokenized real-world assets, including detailed Treasury data.</p>
+<p><strong>My RWA Analytics Dashboard on Dune</strong> — I built a dashboard tracking $23B+ in tokenized assets across 136 protocols, including whale transfers, institutional flows, and concentration risk analysis. [Link to your Dune dashboard]</p>
+<p><strong>CoinGecko 2025 RWA Report</strong> — Comprehensive annual report on the state of tokenized assets.</p>
+<hr>
+<p class="article-subtitle">This is Part 1 of my RWA research series. Part 2 will be a deep-dive data analysis of what the on-chain data tells us about where institutional money is actually flowing — using original analytics from my Dune dashboard. Follow me to catch it when it drops.</p>
+<p class="article-subtitle">If this helped you understand tokenized Treasuries, share it with someone who's still parking their stablecoins at 0%.</p>
+<hr>
+<p class="article-subtitle">Data sources: rwa.xyz, DefiLlama, CoinGecko, Dune Analytics, Chainlink, ERC-3643 Association, INX Research</p>
+
+</article>
+
+<div class="article-footer">
+  <a href="../index.html">← Back to Dashboard</a>
+</div>
+
+</body>
+</html>
