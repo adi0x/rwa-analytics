@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tokenized Real Estate — RWA Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Sora:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg-primary: #0a0a0f; --bg-secondary: #12121a; --bg-card: #16161f;
+    --bg-card-hover: #1c1c28; --accent: #a855f7; --accent-green: #00ff88;
+    --accent-blue: #4d7cff; --accent-purple: #a855f7; --accent-red: #ff4757;
+    --accent-yellow: #ffd700; --accent-orange: #ff6b35;
+    --text-primary: #e8e8ed; --text-secondary: #8888a0; --text-muted: #55556a; --border: #1e1e2e;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg-primary); color:var(--text-primary); font-family:'Sora',sans-serif; line-height:1.8; }
+  .mono { font-family:'JetBrains Mono',monospace; }
+  ::-webkit-scrollbar { width:6px; } ::-webkit-scrollbar-track { background:var(--bg-primary); }
+  ::-webkit-scrollbar-thumb { background:var(--text-muted); border-radius:3px; }
+
+  .nav { position:fixed; top:0; left:0; right:0; z-index:100; padding:0.75rem 2rem;
+    background:rgba(10,10,15,0.9); backdrop-filter:blur(16px); border-bottom:1px solid var(--border);
+    display:flex; justify-content:space-between; align-items:center; }
+  .nav a { color:var(--text-secondary); text-decoration:none; font-size:0.85rem; transition:color 0.2s; }
+  .nav a:hover { color:var(--accent); }
+  .nav .logo { font-weight:700; color:var(--text-primary); font-size:1rem; }
+  .nav .logo span { color:var(--accent-green); }
+
+  .article-hero { padding:7rem 2rem 3rem; max-width:1200px; margin:0 auto;
+    display:grid; grid-template-columns:1fr 1fr; gap:3rem; align-items:center; }
+  .hero-badge { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:0.6rem;
+    letter-spacing:2px; color:var(--accent); padding:0.3rem 0.8rem;
+    border:1px solid color-mix(in srgb, var(--accent) 30%, transparent); border-radius:20px;
+    margin-bottom:1.5rem; text-transform:uppercase; }
+  .article-hero h1 { font-size:clamp(2rem,4vw,3rem); font-weight:800; line-height:1.15; margin-bottom:1rem; }
+  .article-hero h1 em { font-style:normal; color:var(--accent); }
+  .hero-desc { color:var(--text-secondary); font-size:0.95rem; line-height:1.7; margin-bottom:2rem; }
+  .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; }
+  .hero-stat-card { background:var(--bg-card); border:1px solid var(--border); border-radius:10px; padding:1.25rem; text-align:center; }
+  .hero-stat-card .stat-val { font-family:'JetBrains Mono',monospace; font-size:1.5rem; font-weight:700; color:var(--accent); }
+  .hero-stat-card .stat-label { font-size:0.7rem; color:var(--text-muted); margin-top:0.25rem; }
+
+  .hero-live { background:var(--bg-card); border:1px solid var(--border); border-radius:14px;
+    padding:1.5rem; position:relative; overflow:hidden; }
+  .hero-live::before { content:''; position:absolute; top:0; left:0; right:0; height:3px;
+    background:linear-gradient(90deg, var(--accent), var(--accent-blue)); }
+  .hero-live h3 { font-size:0.75rem; font-family:'JetBrains Mono',monospace; letter-spacing:2px;
+    text-transform:uppercase; color:var(--accent); margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem; }
+  .live-dot { width:6px; height:6px; border-radius:50%; background:var(--accent); animation:pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+  .live-kpi-row { display:grid; grid-template-columns:repeat(2,1fr); gap:0.75rem; margin-bottom:1rem; }
+  .live-kpi { background:color-mix(in srgb, var(--accent) 5%, transparent);
+    border:1px solid color-mix(in srgb, var(--accent) 12%, transparent);
+    border-radius:8px; padding:0.75rem; text-align:center; }
+  .live-kpi .lk-val { font-family:'JetBrains Mono',monospace; font-size:1.1rem; font-weight:700; }
+  .live-kpi .lk-label { font-size:0.6rem; color:var(--text-muted); margin-top:0.15rem; }
+
+  .section { padding:4rem 2rem; max-width:1200px; margin:0 auto; }
+  .section-divider { width:100%; max-width:1200px; margin:0 auto; height:1px;
+    background:linear-gradient(90deg, transparent, var(--border), transparent); }
+  .section-label { font-family:'JetBrains Mono',monospace; font-size:0.65rem; letter-spacing:3px;
+    text-transform:uppercase; color:var(--accent); margin-bottom:1rem;
+    display:flex; align-items:center; gap:0.75rem; }
+  .section-label::before { content:''; width:20px; height:1px; background:var(--accent); }
+  .section h2 { font-size:1.8rem; font-weight:700; margin-bottom:0.75rem; }
+  .section-desc { color:var(--text-secondary); font-size:0.9rem; max-width:650px; margin-bottom:2rem; }
+
+  .article-body { max-width:800px; }
+  .article-body h3 { font-size:1.2rem; font-weight:700; margin:2.5rem 0 0.75rem;
+    padding-top:1.5rem; border-top:1px solid var(--border); color:var(--text-primary); }
+  .article-body h3:first-child { border-top:none; padding-top:0; margin-top:0; }
+  .article-body p { color:var(--text-secondary); font-size:0.92rem; margin-bottom:1rem; line-height:1.8; }
+  .article-body strong { color:var(--text-primary); }
+  .article-body ul { list-style:none; padding:0; margin:0.5rem 0 1.5rem; }
+  .article-body ul li { padding:0.4rem 0 0.4rem 1.5rem; position:relative; color:var(--text-secondary); font-size:0.9rem; }
+  .article-body ul li::before { content:'▸'; position:absolute; left:0; color:var(--accent); }
+  .article-body hr { border:none; height:1px; background:linear-gradient(90deg,transparent,var(--border),transparent); margin:2rem 0; }
+
+  .callout { background:var(--bg-card); border-left:3px solid var(--accent);
+    border-radius:0 10px 10px 0; padding:1.25rem 1.5rem; margin:1.5rem 0; }
+  .callout .callout-title { font-family:'JetBrains Mono',monospace; font-size:0.7rem;
+    letter-spacing:1px; text-transform:uppercase; color:var(--accent); margin-bottom:0.5rem; }
+  .callout p { margin-bottom:0; font-size:0.85rem; }
+
+  .compare-table-wrap { background:var(--bg-card); border:1px solid var(--border); border-radius:12px; overflow:hidden; margin:1.5rem 0; }
+  .compare-table { width:100%; border-collapse:collapse; font-size:0.82rem; }
+  .compare-table th { font-family:'JetBrains Mono',monospace; font-size:0.65rem; letter-spacing:1px;
+    text-transform:uppercase; color:var(--accent); padding:0.85rem 1rem; text-align:left;
+    background:color-mix(in srgb, var(--accent) 5%, transparent); border-bottom:1px solid var(--border); }
+  .compare-table td { padding:0.7rem 1rem; color:var(--text-secondary); border-bottom:1px solid rgba(30,30,46,0.4); }
+  .compare-table tr:hover td { background:rgba(255,255,255,0.02); }
+  .compare-table .highlight-val { color:var(--accent); font-weight:600; }
+
+  .risk-row { display:flex; flex-wrap:wrap; gap:0.75rem; margin-top:1.5rem; }
+  .risk-pill { display:flex; align-items:center; gap:0.5rem; background:var(--bg-card);
+    border:1px solid var(--border); border-radius:8px; padding:0.6rem 1rem; font-size:0.8rem; }
+  .risk-pill .risk-dot { width:8px; height:8px; border-radius:50%; }
+  .risk-pill .risk-dot.high { background:var(--accent-red); }
+  .risk-pill .risk-dot.med { background:var(--accent-yellow); }
+  .risk-pill .risk-label { color:var(--text-secondary); }
+  .risk-pill .risk-level { font-family:'JetBrains Mono',monospace; font-size:0.65rem; font-weight:600; }
+  .risk-pill .risk-level.high { color:var(--accent-red); }
+  .risk-pill .risk-level.med { color:var(--accent-yellow); }
+
+  .live-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; }
+  .live-card { background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:1.5rem; }
+  .live-card.full { grid-column:1/-1; }
+  .live-card h3 { font-size:0.85rem; font-weight:600; margin-bottom:1rem; border:none; padding:0;
+    display:flex; align-items:center; gap:0.5rem; }
+  .live-card h3 .dot { width:8px; height:8px; border-radius:50%; background:var(--accent); }
+  .data-table { width:100%; border-collapse:collapse; font-size:0.8rem; }
+  .data-table th { font-family:'JetBrains Mono',monospace; font-size:0.6rem; letter-spacing:1px;
+    text-transform:uppercase; color:var(--accent); padding:0.7rem 0.75rem; text-align:left;
+    border-bottom:1px solid var(--border); }
+  .data-table td { padding:0.6rem 0.75rem; color:var(--text-secondary); border-bottom:1px solid rgba(30,30,46,0.3); }
+  .data-table .pos { color:var(--accent-green); } .data-table .neg { color:var(--accent-red); }
+  .data-table .kpi-loading { width:16px; height:16px; border:2px solid var(--border);
+    border-top-color:var(--accent); border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  .explore-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin-top:1.5rem; }
+  .explore-card { background:var(--bg-card); border:1px solid var(--border); border-radius:12px;
+    padding:1.5rem; text-decoration:none; color:inherit; transition:all 0.3s ease;
+    display:flex; flex-direction:column; gap:0.5rem; }
+  .explore-card:hover { border-color:var(--accent); transform:translateY(-2px); }
+  .explore-card .explore-icon { font-size:1.5rem; }
+  .explore-card .explore-title { font-weight:600; font-size:0.95rem; }
+  .explore-card .explore-desc { font-size:0.75rem; color:var(--text-muted); }
+  .explore-card .explore-link { font-family:'JetBrains Mono',monospace; font-size:0.7rem; color:var(--accent); margin-top:auto; }
+
+  .back-bar { max-width:1200px; margin:0 auto; padding:2rem 2rem 3rem; text-align:center; }
+  .back-bar a { display:inline-block; padding:0.75rem 2rem; background:var(--accent); color:var(--bg-primary);
+    text-decoration:none; border-radius:8px; font-weight:600; font-size:0.9rem; transition:opacity 0.2s; }
+  .back-bar a:hover { opacity:0.85; }
+
+  @media (max-width:768px) {
+    .article-hero { grid-template-columns:1fr; padding:6rem 1.25rem 2rem; }
+    .live-grid { grid-template-columns:1fr; } .explore-grid { grid-template-columns:1fr; }
+    .section { padding:3rem 1.25rem; }
+  }
+  body::after { content:''; position:fixed; top:0; left:0; width:100%; height:100%;
+    background:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events:none; z-index:9999; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="index.html" class="logo"><span>RWA</span> Analytics</a>
+  <a href="index.html">← Back to Dashboard</a>
+</nav>
+
+<!-- HERO -->
+<section class="article-hero">
+  <div class="hero-text">
+    <div class="hero-badge mono">Research 02</div>
+    <h1>Real Estate, <em>Fractionalized.</em></h1>
+    <p class="hero-desc">Buy $50 of a rental property, earn rent in DAI. How tokenization is cracking open the $330 trillion real estate market.</p>
+    <div class="hero-stats">
+      <div class="hero-stat-card"><div class="stat-val">$330T</div><div class="stat-label">Global Market</div></div>
+      <div class="hero-stat-card"><div class="stat-val">0.006%</div><div class="stat-label">Penetration</div></div>
+      <div class="hero-stat-card"><div class="stat-val">4-10%</div><div class="stat-label">Rental Yields</div></div>
+    </div>
+  </div>
+  <div class="hero-live">
+    <h3><span class="live-dot"></span> Live Data</h3>
+    <div class="live-kpi-row">
+      <div class="live-kpi"><div class="lk-val mono" id="lk-realt">Loading...</div><div class="lk-label">RealT TVL</div></div>
+      <div class="live-kpi"><div class="lk-val mono" id="lk-tangible">Loading...</div><div class="lk-label">Tangible</div></div>
+      <div class="live-kpi"><div class="lk-val mono" id="lk-parcl">Loading...</div><div class="lk-label">Parcl</div></div>
+      <div class="live-kpi"><div class="lk-val mono" id="lk-lofty">Loading...</div><div class="lk-label">Lofty</div></div>
+    </div>
+    <canvas id="chart-hero" height="160"></canvas>
+    <p style="font-size:0.6rem;color:var(--text-muted);margin-top:0.5rem;text-align:right;" class="mono">
+      Data from Dune Analytics
+    </p>
+  </div>
+</section>
+
+<!-- LAYER 1: LEARN IT -->
+<div class="section-divider"></div>
+<section class="section">
+  <div class="section-label">Learn</div>
+  <div class="article-body">
+<div class="callout"><div class="callout-title">Overview</div><p>You don't need $300,000 to invest in real estate anymore. Here's how tokenization is changing everything — from $50 property investments to automated rent payments via smart contracts.</p></div>
+<hr>
+<h3>The Problem Everyone Knows</h3>
+<p>Real estate is the largest asset class on the planet — worth over <strong>$330 trillion globally</strong>. It's also one of the worst to invest in.</p>
+<p>Not because it's a bad investment. Real estate has been one of the most reliable wealth builders in history. The problem is access. To buy a rental property, you typically need a massive down payment ($50,000–$100,000+), a mortgage approval, property management, and the patience to deal with tenants, maintenance, and legal headaches.</p>
+<p>The result? Real estate investing has been locked behind walls that keep out 90% of people. If you don't have six figures sitting around, you're basically watching from the sidelines while landlords build generational wealth.</p>
+<p>Tokenization changes that.</p>
+<hr>
+<h3>What Is Tokenized Real Estate?</h3>
+<p>Let's break it down to the absolute basics.</p>
+<p><strong>Tokenized real estate</strong> is when you take a physical property — a house, apartment building, commercial space — and divide its ownership into digital tokens on a blockchain. Each token represents a fraction of that property.</p>
+<p>If a $200,000 rental house is divided into 10,000 tokens, each token is worth $20. Buy 10 tokens, and you own 0.1% of that house. When the tenant pays rent, you get 0.1% of the rent — automatically, via a smart contract, directly to your crypto wallet.</p>
+<p>That's it. You're a real estate investor for $200.</p>
+<hr>
+<h3>How Does It Work? Step by Step</h3>
+<p>Here's the full process from property to your wallet:</p>
+<p><strong>Step 1 — Property owner decides to tokenize.</strong> The owner of a rental property agrees to put the property into a Special Purpose Vehicle (SPV) — a legal entity created specifically to hold that one property. This is a standard legal structure that protects investors.</p>
+<p><strong>Step 2 — Tokens are created.</strong> The platform creates digital tokens (usually ERC-20 on Ethereum) that represent fractional ownership of the SPV, which owns the property. The owner decides how many tokens to create and at what price.</p>
+<p><strong>Step 3 — Tokens are sold to investors.</strong> Investors buy tokens using stablecoins (USDC, DAI) or sometimes fiat currency. Each token gives them proportional ownership of the property.</p>
+<p><strong>Step 4 — Tenant pays rent.</strong> The property is rented out to a tenant, just like any normal rental. The tenant pays rent monthly.</p>
+<p><strong>Step 5 — Smart contract distributes rent.</strong> This is where blockchain magic happens. A smart contract automatically calculates each token holder's share of the rent and distributes it to their wallets. If you own 1% of the tokens, you get 1% of the rent. No middleman. No delays.</p>
+<p><strong>Step 6 — You can sell anytime.</strong> Unlike traditional real estate (where selling a property takes months), you can sell your tokens on a secondary market whenever you want. Someone else buys your tokens, and they start receiving the rent.</p>
+<hr>
+<h3>The Rent Distribution Math</h3>
+<p>Let's make this concrete with numbers from the research paper we referenced.</p>
+<p>Say a property has <strong>1,000 tokens</strong> total. The <strong>monthly rent is $2,000.</strong></p>
+<p>The original owner keeps 600 tokens (60%). Three investors buy the rest:</p>
+<ul><li>Investor A: 200 tokens (20%)</li><li>Investor B: 150 tokens (15%)</li><li>Investor C: 50 tokens (5%)</li></ul>
+<p>When rent comes in:</p>
+<ul><li>Owner gets: $2,000 × 60% = <strong>$1,200</strong></li><li>Investor A gets: $2,000 × 20% = <strong>$400</strong></li><li>Investor B gets: $2,000 × 15% = <strong>$300</strong></li><li>Investor C gets: $2,000 × 5% = <strong>$100</strong></li></ul>
+<p>All automated. All transparent on the blockchain. Every single month.</p>
+<p>If Investor C wants to exit, they sell their 50 tokens to someone else. The new buyer immediately starts receiving $100/month in rent. No lawyers, no paperwork, no closing costs.</p>
+<hr>
+<h3>Why This Is Better Than Traditional Real Estate</h3>
+<p>Here's the side-by-side comparison:</p>
+<div class="compare-table-wrap"><table class="compare-table"><thead><tr><th>Feature</th><th>Traditional Real Estate</th><th>Tokenized Real Estate</th></tr></thead><tbody><tr><td><strong>Minimum Investment</strong></td><td>$50,000–$300,000+</td><td>As low as $50</td></tr><tr><td><strong>Time to Buy</strong></td><td>30–90 days (inspections, mortgage, closing)</td><td>Minutes</td></tr><tr><td><strong>Time to Sell</strong></td><td>3–6 months average</td><td>Instant (secondary market)</td></tr><tr><td><strong>Intermediaries</strong></td><td>Agents, lawyers, banks, title companies, inspectors</td><td>Smart contract</td></tr><tr><td><strong>Transaction Fees</strong></td><td>5–8% (agent commissions, closing costs)</td><td>0.5–2%</td></tr><tr><td><strong>Rent Collection</strong></td><td>Manual, through property manager (8–12% fee)</td><td>Automated via smart contract</td></tr><tr><td><strong>Geographic Limits</strong></td><td>Usually local or national</td><td>Global — invest in any country</td></tr><tr><td><strong>Transparency</strong></td><td>Opaque — trust the seller's disclosures</td><td>Every transaction on public blockchain</td></tr><tr><td><strong>Diversification</strong></td><td>Hard — buying one property ties up all your capital</td><td>Easy — spread $1,000 across 20 properties</td></tr></tbody></table></div>
+<p>That last point is critical. In traditional real estate, if you have $200,000, you can maybe buy one property. If that property's neighborhood declines or your tenant stops paying, you're in trouble.</p>
+<p>With tokenization, that same $200,000 could be spread across 50 different properties in different cities, states, or even countries. Your risk is dramatically reduced.</p>
+<hr>
+<h3>The Smart Contract Under the Hood</h3>
+<p>For the technically curious, here's how the smart contract works (simplified from the Solidity implementation in the research paper):</p>
+<p>The smart contract has these core functions:</p>
+<p><strong>createToken()</strong> — The owner sets the total number of tokens representing the property. Only the owner can call this.</p>
+<p><strong>assignTokenOwnership()</strong> — Transfers tokens from one wallet to another. The contract checks that the sender actually owns enough tokens before allowing the transfer.</p>
+<p><strong>setRentAmount()</strong> — The owner sets (or updates) the monthly rent amount. This can be modified if rent changes.</p>
+<p><strong>payRent()</strong> — The tenant calls this function to pay rent. The payment goes into a "pool" in the smart contract. The contract tracks how many days of rent have been paid.</p>
+<p><strong>distributeRent()</strong> — The owner triggers rent distribution. The contract loops through every token holder, calculates their share based on how many tokens they hold, and sends their portion directly to their wallet.</p>
+<p><strong>showTokensOwnBy()</strong> — Anyone can check how many tokens a specific wallet address owns. Full transparency.</p>
+<p>The beauty of this system is that once the smart contract is deployed, the rules are locked in. The owner can't secretly take a bigger cut. The rent math is transparent and verifiable by anyone. No trust required — the code enforces the rules.</p>
+<hr>
+<h3>Who's Actually Doing This Today?</h3>
+<p>Tokenized real estate isn't theoretical. Several platforms have been operating for years with real properties and real payouts.</p>
+<h3>RealT (United States)</h3>
+<p>RealT is the largest tokenized real estate platform. Key stats:</p>
+<ul><li><strong>970+ properties</strong> tokenized in the U.S.</li><li>Over <strong>$15 million</strong> in rental payouts distributed directly to token holders</li><li>Tokens start at just <strong>$50</strong></li><li><strong>88%</strong> of users invested less than $5,000</li><li>Rent is paid in stablecoins (DAI) <strong>daily</strong> to your wallet</li><li>Properties are mainly single-family rental homes in Detroit and other U.S. cities</li></ul>
+<p>RealT uses an SPV structure — each property is held by its own LLC, and tokens represent shares in that LLC. This provides legal protection and clear ownership rights.</p>
+<p>Note: In July 2025, Detroit filed a lawsuit against RealT claiming property mismanagement, which highlights the real-world operational risks even when the blockchain layer works perfectly.</p>
+<h3>Reental (Spain/Latin America)</h3>
+<p>Reental has built a community of <strong>21,000+ investors</strong> across <strong>90 countries</strong>, tokenizing <strong>82 properties</strong> worth over <strong>$57 million</strong>. They use a utility token (RNT) for governance and rewards, adding a DeFi layer on top of the real estate investment.</p>
+<h3>Lofty (United States)</h3>
+<p>Lofty offers tokenized U.S. rental properties on the Algorand blockchain, with tokens starting at $50 and daily rent payouts. They focus on user experience and making the process feel as simple as buying a stock.</p>
+<h3>Parcl (Synthetic Real Estate)</h3>
+<p>Parcl takes a different approach — instead of tokenizing actual properties, it lets you trade <strong>synthetic exposure</strong> to real estate markets. You can go long or short on housing prices in cities like Miami, New York, or Los Angeles. It's more like a real estate derivatives market than fractional ownership.</p>
+<h3>Tangible (Real Estate + NFTs)</h3>
+<p>Tangible combines real estate tokenization with NFTs, representing each property as a unique token. They focus on UK and European properties and have been building out a real estate-backed stablecoin concept.</p>
+<hr>
+<h3>The Yield: How Much Can You Actually Make?</h3>
+<p>Real estate rental yields vary by market, but here's what tokenized platforms are offering:</p>
+<div class="compare-table-wrap"><table class="compare-table"><thead><tr><th>Platform</th><th>Typical Yield</th><th>Payout Frequency</th><th>Minimum Investment</th></tr></thead><tbody><tr><td>RealT</td><td>8–12% APY</td><td>Daily</td><td class="highlight-val">$50</td></tr><tr><td>Reental</td><td>7–10% APY</td><td>Monthly</td><td>~$100</td></tr><tr><td>Lofty</td><td>6–10% APY</td><td>Daily</td><td class="highlight-val">$50</td></tr></tbody></table></div>
+<p>For context, a traditional rental property in the U.S. yields roughly <strong>4–8% annually</strong> after accounting for maintenance, property management fees (8–12%), vacancies, and repairs.</p>
+<p>Tokenized platforms can offer higher effective yields because they eliminate many middlemen and automate management through smart contracts. However, they also carry different risks (platform risk, smart contract risk, legal risk).</p>
+<hr>
+<h3>The $330 Trillion Opportunity</h3>
+<p>Let's put the market size in perspective:</p>
+<ul><li>Global real estate market: <strong>$330 trillion</strong></li><li>Current tokenized real estate market: <strong>~$20 billion</strong> (2025)</li><li>That's <strong>0.006%</strong> penetration</li></ul>
+<p>Projections:</p>
+<ul><li><strong>$3 trillion</strong> in tokenized real estate by 2030 (BCG estimate, ~49% CAGR)</li><li><strong>$1 trillion</strong> in tokenized private real estate funds by 2035 (Deloitte)</li><li><strong>15%</strong> of real estate AUM could be tokenized by 2030 (ScienceSoft)</li></ul>
+<p>As of mid-2025, 12% of global real estate companies had already adopted tokenization, while 46% were in the pilot phase. The number of tokenization platforms grew 75% in 2023 alone.</p>
+<p>Dubai is leading on the government side — their 2025 pilot to tokenize property deeds aims to capture 7% of their property market (~$16 billion) by 2033.</p>
+<hr>
+<h3>DeFi Integration: Real Estate as a Financial Building Block</h3>
+<p>Just like tokenized Treasuries, tokenized real estate becomes composable in DeFi:</p>
+<p><strong>Collateral for loans</strong> — Deposit your real estate tokens on a lending protocol and borrow stablecoins against them. You keep earning rent while accessing liquidity.</p>
+<p><strong>Liquidity pools</strong> — Real estate tokens can be paired with stablecoins in DEX liquidity pools, earning additional trading fees on top of rental yield.</p>
+<p><strong>Yield stacking</strong> — Earn rent from the property + lending yield from DeFi + trading fees from liquidity provision. Multiple income streams from one asset.</p>
+<p><strong>Portfolio construction</strong> — Mix real estate tokens with tokenized Treasuries, gold, and equities to build a diversified, yield-generating portfolio entirely on-chain.</p>
+<hr>
+<h3>Risks You Need to Know</h3>
+<p>Tokenized real estate is exciting, but it's not risk-free. Here's an honest breakdown:</p>
+<h3>Legal and Regulatory Risk</h3>
+<p>This is the biggest unknown. How are tokenized properties treated under existing property law? Different countries have different answers — or no answer at all. If the platform shuts down, what happens to your tokens? The SPV structure provides some protection, but it hasn't been fully tested in court.</p>
+<h3>Property Management Risk</h3>
+<p>The blockchain handles the financial layer perfectly. But someone still needs to manage the physical property — fix the roof, deal with tenant complaints, handle evictions. If the property manager does a poor job (as Detroit alleged with RealT), your investment suffers regardless of how clean the smart contract is.</p>
+<h3>Smart Contract Risk</h3>
+<p>Bugs in the smart contract code could lead to lost funds. While most platforms use audited contracts, no code is 100% bug-free. This is a risk with any blockchain-based investment.</p>
+<h3>Liquidity Risk</h3>
+<p>Secondary markets for real estate tokens are still thin. If you need to sell quickly, you might not find a buyer at your desired price. This is improving as the market grows, but it's not yet comparable to selling a stock.</p>
+<h3>Valuation Risk</h3>
+<p>Real estate prices fluctuate. If property values decline in the area where your tokenized property is located, the value of your tokens drops too. Tokenization doesn't eliminate market risk — it just makes access easier.</p>
+<h3>Privacy Concerns</h3>
+<p>Tenant data, ownership records, and payment history on a public blockchain raise privacy questions. Some platforms use permissioned or hybrid blockchains to address this.</p>
+<hr>
+<h3>How to Get Started</h3>
+<p>If you want to try tokenized real estate investing, here's a practical guide:</p>
+<p><strong>Step 1</strong> — Choose a platform (RealT, Lofty, or Reental are the most established).</p>
+<p><strong>Step 2</strong> — Complete KYC verification (required by all reputable platforms).</p>
+<p><strong>Step 3</strong> — Fund your account with stablecoins (USDC or DAI) or fiat currency.</p>
+<p><strong>Step 4</strong> — Browse available properties. Look at location, rental yield, occupancy rate, and property condition.</p>
+<p><strong>Step 5</strong> — Buy tokens. Start small ($50–$500) until you understand how it works.</p>
+<p><strong>Step 6</strong> — Watch rent hit your wallet. On RealT and Lofty, it's daily.</p>
+<p><strong>Step 7</strong> — Reinvest or diversify across multiple properties.</p>
+<p>Start with one property, see the rent come in, understand the mechanics, then scale from there.</p>
+<hr>
+<h3>The Future: What Comes Next</h3>
+<p>Several trends will shape tokenized real estate over the next few years:</p>
+<p><strong>Government adoption</strong> — Dubai is tokenizing property deeds. If major governments start recognizing blockchain-based ownership records, the legal uncertainty disappears overnight.</p>
+<p><strong>Cross-chain expansion</strong> — Properties tokenized on Ethereum becoming accessible on Solana, Base, and Arbitrum via protocols like Chainlink CCIP. More chains = more investors = more liquidity.</p>
+<p><strong>Institutional entry</strong> — As the market matures, large real estate funds will tokenize their portfolios. When BlackRock or Vanguard tokenizes a real estate fund the way they tokenized Treasuries (BUIDL), the market explodes.</p>
+<p><strong>AI property management</strong> — Smart contracts handle the financial layer. AI could handle the physical layer — automated maintenance scheduling, tenant screening, dynamic pricing. Fully automated real estate investing from purchase to payout.</p>
+<p><strong>Mortgage tokenization</strong> — Not just owning property through tokens, but borrowing against it on-chain. DeFi mortgages where your tokenized property serves as collateral for a stablecoin loan.</p>
+<hr>
+<h3>The Bottom Line</h3>
+<p>Real estate has always been the ultimate wealth builder — but only for those who could afford the entry price. Tokenization removes that barrier entirely.</p>
+<p>For $50, you can own a piece of a rental property, receive daily rent payments, and sell your position whenever you want. The smart contract handles the math. The blockchain handles the trust. You just collect the yield.</p>
+<p>The market is early — $20 billion against $330 trillion in global real estate. That's 0.006%. The opportunity is massive, but so are the risks. Start small, diversify across properties and platforms, and understand what you're investing in.</p>
+<p>Real estate isn't going anywhere. But how we invest in it is changing forever.</p>
+<hr>
+<div class="callout"><div class="callout-title">Overview</div><p>This is part of my RWA research series covering every major tokenized asset category. Check out my other articles on Tokenized Treasuries and Tokenized Gold, and explore my live Dune Analytics dashboard tracking $23B+ in tokenized assets across 136 protocols.</p></div>
+<div class="callout"><div class="callout-title">Overview</div><p>Data sources: Research paper "Tokenization of Rental Real Estate Assets Using Blockchain Technology" (Rath et al., 2023), rwa.xyz, ScienceSoft, BCG, Deloitte, CoinGecko, RealT, Reental</p></div>
+
+    <h3>Risks to Consider</h3>
+    <div class="risk-row">
+      <div class="risk-pill"><span class="risk-dot high"></span><span class="risk-label">Liquidity</span><span class="risk-level high">HIGH</span></div>
+      <div class="risk-pill"><span class="risk-dot high"></span><span class="risk-label">Regulatory</span><span class="risk-level high">HIGH</span></div>
+      <div class="risk-pill"><span class="risk-dot med"></span><span class="risk-label">Valuation</span><span class="risk-level med">MEDIUM</span></div>
+      <div class="risk-pill"><span class="risk-dot med"></span><span class="risk-label">Property Risk</span><span class="risk-level med">MEDIUM</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- LAYER 2: SEE IT -->
+<div class="section-divider"></div>
+<section class="section">
+  <div class="section-label">Live On-Chain Data</div>
+  <h2>See It Live</h2>
+  <p class="section-desc">Filtered data from Dune Analytics for this asset class.</p>
+  <div class="live-grid">
+    <div class="live-card">
+      <h3><span class="dot"></span> Protocol TVL</h3>
+      <canvas id="chart-tvl" height="240"></canvas>
+    </div>
+    <div class="live-card">
+      <h3><span class="dot" style="background:var(--accent-blue);"></span> Activity</h3>
+      <canvas id="chart-activity" height="240"></canvas>
+    </div>
+    <div class="live-card full">
+      <h3><span class="dot" style="background:var(--accent-yellow);"></span> Related Protocols</h3>
+      <table class="data-table" id="table-protocols">
+        <thead><tr><th>Protocol</th><th>TVL</th><th>Category</th><th>7d Change</th></tr></thead>
+        <tbody><tr><td colspan="4" style="text-align:center;padding:1.5rem;"><div class="kpi-loading"></div></td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- LAYER 3: EXPLORE -->
+<div class="section-divider"></div>
+<section class="section">
+  <div class="section-label">Go Deeper</div>
+  <h2>Explore</h2>
+  <p class="section-desc">Drill into the data with institutional-grade tools.</p>
+  <div class="explore-grid">
+    <a href="https://app.rwa.xyz/real-estate" target="_blank" class="explore-card">
+      <div class="explore-icon">📊</div>
+      <div class="explore-title">rwa.xyz — Real Estate</div>
+      <div class="explore-desc">Tokenized property data and platforms.</div>
+      <div class="explore-link mono">Explore →</div>
+    </a>
+    <a href="https://realt.co/marketplace" target="_blank" class="explore-card">
+      <div class="explore-icon">🏠</div>
+      <div class="explore-title">RealT Marketplace</div>
+      <div class="explore-desc">Browse tokenized properties.</div>
+      <div class="explore-link mono">Explore →</div>
+    </a>
+    <a href="https://dune.com/adu0x" target="_blank" class="explore-card">
+      <div class="explore-icon">🔮</div>
+      <div class="explore-title">Dune Dashboard</div>
+      <div class="explore-desc">Full RWA on-chain analytics.</div>
+      <div class="explore-link mono">Explore →</div>
+    </a>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+<div class="back-bar"><a href="index.html">← Back to Dashboard</a></div>
+
+<!-- DUNE API -->
+<script>
+const DUNE_API_KEY = 'YBDcEyiKz0mXLJJX4kOC6bBFcvN68UUi';
+const DUNE_BASE = 'https://api.dune.com/api/v1/query';
+Chart.defaults.color = '#8888a0';
+Chart.defaults.borderColor = '#1e1e2e';
+Chart.defaults.font.family = "'JetBrains Mono', monospace";
+Chart.defaults.font.size = 10;
+
+async function fetchDune(qid, limit=50) {
+  try {
+    const r = await fetch(DUNE_BASE+'/'+qid+'/results?limit='+limit, { headers:{'X-Dune-API-Key':DUNE_API_KEY} });
+    if (!r.ok) throw new Error('HTTP '+r.status);
+    const d = await r.json();
+    const rows = d.result?.rows || [];
+    if (rows.length) console.log('Q'+qid+' cols:', Object.keys(rows[0]), 'sample:', rows[0]);
+    return rows;
+  } catch(e) { console.error('Q'+qid+' fail:', e); return null; }
+}
+
+function fmt(n) {
+  if (n>=1e9) return '$'+(n/1e9).toFixed(1)+'B';
+  if (n>=1e6) return '$'+(n/1e6).toFixed(1)+'M';
+  if (n>=1e3) return '$'+(n/1e3).toFixed(0)+'K';
+  return '$'+n.toFixed(0);
+}
+
+// Load leaderboard filtered for this category
+async function init() {
+  const rows = await fetchDune(6676500, 50);
+  if (!rows) return;
+  
+  const keys = Object.keys(rows[0]);
+  const nameKey = keys.find(k => typeof rows[0][k] === 'string' && k.includes('name')) || keys[0];
+  const tvlKey = keys.find(k => typeof rows[0][k] === 'number' && (k.includes('tvl') || k.includes('TVL'))) || keys.find(k => typeof rows[0][k] === 'number');
+  const catKey = keys.find(k => k.includes('category') || k.includes('type')) || '';
+  const changeKey = keys.find(k => k.includes('7d') || k.includes('change')) || '';
+  
+  // Populate protocol table
+  const tbody = document.querySelector('#table-protocols tbody');
+  const display = rows.slice(0, 15);
+  tbody.innerHTML = display.map(r => {
+    const tvl = r[tvlKey]; const change = r[changeKey];
+    return '<tr><td><strong>'+(r[nameKey]||'—')+'</strong></td><td>'+(tvl?fmt(tvl):'—')+'</td><td>'+(r[catKey]||'—')+'</td><td class="'+(change>=0?'pos':'neg')+'">'+(change!=null?(change>=0?'+':'')+change.toFixed(1)+'%':'—')+'</td></tr>';
+  }).join('');
+
+  // Charts with top protocols by TVL
+  const sorted = [...rows].sort((a,b) => (b[tvlKey]||0) - (a[tvlKey]||0)).slice(0,8);
+  new Chart(document.getElementById('chart-tvl'), {
+    type:'bar', data:{ labels:sorted.map(r=>r[nameKey]), datasets:[{data:sorted.map(r=>r[tvlKey]),backgroundColor:'#a855f7',borderRadius:4}] },
+    options:{ responsive:true, indexAxis:'y', plugins:{legend:{display:false}}, scales:{x:{ticks:{callback:v=>fmt(v)},grid:{color:'#1e1e2e'}},y:{grid:{display:false}}} }
+  });
+
+  // Activity chart - use change data
+  if (changeKey) {
+    const withChange = rows.filter(r => r[changeKey] != null).slice(0,8);
+    new Chart(document.getElementById('chart-activity'), {
+      type:'bar', data:{ labels:withChange.map(r=>r[nameKey]),
+        datasets:[{data:withChange.map(r=>r[changeKey]),backgroundColor:withChange.map(r=>r[changeKey]>=0?'#00ff88':'#ff4757'),borderRadius:4}] },
+      options:{ responsive:true, plugins:{legend:{display:false}}, scales:{y:{ticks:{callback:v=>v+'%'},grid:{color:'#1e1e2e'}},x:{grid:{display:false}}} }
+    });
+  }
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
