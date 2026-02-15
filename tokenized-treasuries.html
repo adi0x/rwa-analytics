@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tokenized Treasuries — RWA Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Sora:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg-primary: #0a0a0f; --bg-secondary: #12121a; --bg-card: #16161f;
+    --bg-card-hover: #1c1c28; --accent: #00ff88; --accent-green: #00ff88;
+    --accent-blue: #4d7cff; --accent-purple: #a855f7; --accent-red: #ff4757;
+    --accent-yellow: #ffd700; --accent-orange: #ff6b35;
+    --text-primary: #e8e8ed; --text-secondary: #8888a0; --text-muted: #55556a; --border: #1e1e2e;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg-primary); color:var(--text-primary); font-family:'Sora',sans-serif; line-height:1.8; }
+  .mono { font-family:'JetBrains Mono',monospace; }
+  ::-webkit-scrollbar { width:6px; } ::-webkit-scrollbar-track { background:var(--bg-primary); }
+  ::-webkit-scrollbar-thumb { background:var(--text-muted); border-radius:3px; }
+
+  .nav { position:fixed; top:0; left:0; right:0; z-index:100; padding:0.75rem 2rem;
+    background:rgba(10,10,15,0.9); backdrop-filter:blur(16px); border-bottom:1px solid var(--border);
+    display:flex; justify-content:space-between; align-items:center; }
+  .nav a { color:var(--text-secondary); text-decoration:none; font-size:0.85rem; transition:color 0.2s; }
+  .nav a:hover { color:var(--accent); }
+  .nav .logo { font-weight:700; color:var(--text-primary); font-size:1rem; }
+  .nav .logo span { color:var(--accent-green); }
+
+  .article-hero { padding:7rem 2rem 3rem; max-width:1200px; margin:0 auto;
+    display:grid; grid-template-columns:1fr 1fr; gap:3rem; align-items:center; }
+  .hero-badge { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:0.6rem;
+    letter-spacing:2px; color:var(--accent); padding:0.3rem 0.8rem;
+    border:1px solid color-mix(in srgb, var(--accent) 30%, transparent); border-radius:20px;
+    margin-bottom:1.5rem; text-transform:uppercase; }
+  .article-hero h1 { font-size:clamp(2rem,4vw,3rem); font-weight:800; line-height:1.15; margin-bottom:1rem; }
+  .article-hero h1 em { font-style:normal; color:var(--accent); }
+  .hero-desc { color:var(--text-secondary); font-size:0.95rem; line-height:1.7; margin-bottom:2rem; }
+  .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; }
+  .hero-stat-card { background:var(--bg-card); border:1px solid var(--border); border-radius:10px; padding:1.25rem; text-align:center; }
+  .hero-stat-card .stat-val { font-family:'JetBrains Mono',monospace; font-size:1.5rem; font-weight:700; color:var(--accent); }
+  .hero-stat-card .stat-label { font-size:0.7rem; color:var(--text-muted); margin-top:0.25rem; }
+
+  .hero-live { background:var(--bg-card); border:1px solid var(--border); border-radius:14px;
+    padding:1.5rem; position:relative; overflow:hidden; }
+  .hero-live::before { content:''; position:absolute; top:0; left:0; right:0; height:3px;
+    background:linear-gradient(90deg, var(--accent), var(--accent-blue)); }
+  .hero-live h3 { font-size:0.75rem; font-family:'JetBrains Mono',monospace; letter-spacing:2px;
+    text-transform:uppercase; color:var(--accent); margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem; }
+  .live-dot { width:6px; height:6px; border-radius:50%; background:var(--accent); animation:pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+  .live-kpi-row { display:grid; grid-template-columns:repeat(2,1fr); gap:0.75rem; margin-bottom:1rem; }
+  .live-kpi { background:color-mix(in srgb, var(--accent) 5%, transparent);
+    border:1px solid color-mix(in srgb, var(--accent) 12%, transparent);
+    border-radius:8px; padding:0.75rem; text-align:center; }
+  .live-kpi .lk-val { font-family:'JetBrains Mono',monospace; font-size:1.1rem; font-weight:700; }
+  .live-kpi .lk-label { font-size:0.6rem; color:var(--text-muted); margin-top:0.15rem; }
+
+  .section { padding:4rem 2rem; max-width:1200px; margin:0 auto; }
+  .section-divider { width:100%; max-width:1200px; margin:0 auto; height:1px;
+    background:linear-gradient(90deg, transparent, var(--border), transparent); }
+  .section-label { font-family:'JetBrains Mono',monospace; font-size:0.65rem; letter-spacing:3px;
+    text-transform:uppercase; color:var(--accent); margin-bottom:1rem;
+    display:flex; align-items:center; gap:0.75rem; }
+  .section-label::before { content:''; width:20px; height:1px; background:var(--accent); }
+  .section h2 { font-size:1.8rem; font-weight:700; margin-bottom:0.75rem; }
+  .section-desc { color:var(--text-secondary); font-size:0.9rem; max-width:650px; margin-bottom:2rem; }
+
+  .article-body { max-width:800px; }
+  .article-body h3 { font-size:1.2rem; font-weight:700; margin:2.5rem 0 0.75rem;
+    padding-top:1.5rem; border-top:1px solid var(--border); color:var(--text-primary); }
+  .article-body h3:first-child { border-top:none; padding-top:0; margin-top:0; }
+  .article-body p { color:var(--text-secondary); font-size:0.92rem; margin-bottom:1rem; line-height:1.8; }
+  .article-body strong { color:var(--text-primary); }
+  .article-body ul { list-style:none; padding:0; margin:0.5rem 0 1.5rem; }
+  .article-body ul li { padding:0.4rem 0 0.4rem 1.5rem; position:relative; color:var(--text-secondary); font-size:0.9rem; }
+  .article-body ul li::before { content:'▸'; position:absolute; left:0; color:var(--accent); }
+  .article-body hr { border:none; height:1px; background:linear-gradient(90deg,transparent,var(--border),transparent); margin:2rem 0; }
+
+  .callout { background:var(--bg-card); border-left:3px solid var(--accent);
+    border-radius:0 10px 10px 0; padding:1.25rem 1.5rem; margin:1.5rem 0; }
+  .callout .callout-title { font-family:'JetBrains Mono',monospace; font-size:0.7rem;
+    letter-spacing:1px; text-transform:uppercase; color:var(--accent); margin-bottom:0.5rem; }
+  .callout p { margin-bottom:0; font-size:0.85rem; }
+
+  .compare-table-wrap { background:var(--bg-card); border:1px solid var(--border); border-radius:12px; overflow:hidden; margin:1.5rem 0; }
+  .compare-table { width:100%; border-collapse:collapse; font-size:0.82rem; }
+  .compare-table th { font-family:'JetBrains Mono',monospace; font-size:0.65rem; letter-spacing:1px;
+    text-transform:uppercase; color:var(--accent); padding:0.85rem 1rem; text-align:left;
+    background:color-mix(in srgb, var(--accent) 5%, transparent); border-bottom:1px solid var(--border); }
+  .compare-table td { padding:0.7rem 1rem; color:var(--text-secondary); border-bottom:1px solid rgba(30,30,46,0.4); }
+  .compare-table tr:hover td { background:rgba(255,255,255,0.02); }
+  .compare-table .highlight-val { color:var(--accent); font-weight:600; }
+
+  .risk-row { display:flex; flex-wrap:wrap; gap:0.75rem; margin-top:1.5rem; }
+  .risk-pill { display:flex; align-items:center; gap:0.5rem; background:var(--bg-card);
+    border:1px solid var(--border); border-radius:8px; padding:0.6rem 1rem; font-size:0.8rem; }
+  .risk-pill .risk-dot { width:8px; height:8px; border-radius:50%; }
+  .risk-pill .risk-dot.high { background:var(--accent-red); }
+  .risk-pill .risk-dot.med { background:var(--accent-yellow); }
+  .risk-pill .risk-label { color:var(--text-secondary); }
+  .risk-pill .risk-level { font-family:'JetBrains Mono',monospace; font-size:0.65rem; font-weight:600; }
+  .risk-pill .risk-level.high { color:var(--accent-red); }
+  .risk-pill .risk-level.med { color:var(--accent-yellow); }
+
+  .live-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; }
+  .live-card { background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:1.5rem; }
+  .live-card.full { grid-column:1/-1; }
+  .live-card h3 { font-size:0.85rem; font-weight:600; margin-bottom:1rem; border:none; padding:0;
+    display:flex; align-items:center; gap:0.5rem; }
+  .live-card h3 .dot { width:8px; height:8px; border-radius:50%; background:var(--accent); }
+  .data-table { width:100%; border-collapse:collapse; font-size:0.8rem; }
+  .data-table th { font-family:'JetBrains Mono',monospace; font-size:0.6rem; letter-spacing:1px;
+    text-transform:uppercase; color:var(--accent); padding:0.7rem 0.75rem; text-align:left;
+    border-bottom:1px solid var(--border); }
+  .data-table td { padding:0.6rem 0.75rem; color:var(--text-secondary); border-bottom:1px solid rgba(30,30,46,0.3); }
+  .data-table .pos { color:var(--accent-green); } .data-table .neg { color:var(--accent-red); }
+  .data-table .kpi-loading { width:16px; height:16px; border:2px solid var(--border);
+    border-top-color:var(--accent); border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  .explore-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin-top:1.5rem; }
+  .explore-card { background:var(--bg-card); border:1px solid var(--border); border-radius:12px;
+    padding:1.5rem; text-decoration:none; color:inherit; transition:all 0.3s ease;
+    display:flex; flex-direction:column; gap:0.5rem; }
+  .explore-card:hover { border-color:var(--accent); transform:translateY(-2px); }
+  .explore-card .explore-icon { font-size:1.5rem; }
+  .explore-card .explore-title { font-weight:600; font-size:0.95rem; }
+  .explore-card .explore-desc { font-size:0.75rem; color:var(--text-muted); }
+  .explore-card .explore-link { font-family:'JetBrains Mono',monospace; font-size:0.7rem; color:var(--accent); margin-top:auto; }
+
+  .back-bar { max-width:1200px; margin:0 auto; padding:2rem 2rem 3rem; text-align:center; }
+  .back-bar a { display:inline-block; padding:0.75rem 2rem; background:var(--accent); color:var(--bg-primary);
+    text-decoration:none; border-radius:8px; font-weight:600; font-size:0.9rem; transition:opacity 0.2s; }
+  .back-bar a:hover { opacity:0.85; }
+
+  @media (max-width:768px) {
+    .article-hero { grid-template-columns:1fr; padding:6rem 1.25rem 2rem; }
+    .live-grid { grid-template-columns:1fr; } .explore-grid { grid-template-columns:1fr; }
+    .section { padding:3rem 1.25rem; }
+  }
+  body::after { content:''; position:fixed; top:0; left:0; width:100%; height:100%;
+    background:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events:none; z-index:9999; }
+
+  .get-started-box { background:var(--bg-card); border:1px solid var(--accent); border-radius:12px;
+    padding:1.5rem; margin:1.5rem 0; position:relative; overflow:hidden; }
+  .get-started-box::before { content:''; position:absolute; top:0; left:0; right:0; height:3px;
+    background:linear-gradient(90deg, var(--accent), var(--accent-blue)); }
+  .gs-title { font-family:'JetBrains Mono',monospace; font-size:0.7rem; letter-spacing:2px;
+    text-transform:uppercase; color:var(--accent); margin-bottom:1rem; }
+  .gs-steps { display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-bottom:1.25rem; }
+  .gs-step { display:flex; gap:0.75rem; align-items:flex-start; background:rgba(255,255,255,0.02);
+    border:1px solid var(--border); border-radius:8px; padding:0.75rem; }
+  .gs-num { font-family:'JetBrains Mono',monospace; font-size:0.75rem; font-weight:700;
+    color:var(--bg-primary); background:var(--accent); width:22px; height:22px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:2px; }
+  .gs-step div { font-size:0.8rem; color:var(--text-secondary); line-height:1.5; }
+  .gs-step strong { color:var(--text-primary); font-size:0.82rem; }
+  .gs-step a { color:var(--accent); text-decoration:none; }
+  .gs-step a:hover { text-decoration:underline; }
+  .gs-protocols { display:flex; flex-direction:column; gap:0.4rem; margin-bottom:0.75rem; }
+  .gs-proto-link { display:block; font-family:'JetBrains Mono',monospace; font-size:0.72rem;
+    color:var(--accent); text-decoration:none; padding:0.5rem 0.75rem;
+    background:color-mix(in srgb, var(--accent) 5%, transparent);
+    border:1px solid color-mix(in srgb, var(--accent) 15%, transparent);
+    border-radius:6px; transition:all 0.2s; }
+  .gs-proto-link:hover { border-color:var(--accent); background:color-mix(in srgb, var(--accent) 10%, transparent); }
+  .gs-note { font-size:0.72rem; color:var(--text-muted); margin-top:0.5rem; }
+  @media (max-width:768px) { .gs-steps { grid-template-columns:1fr; } }
+
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="index.html" class="logo"><span>RWA</span> Analytics</a>
+  <a href="index.html">← Back to Dashboard</a>
+</nav>
+
+<!-- HERO -->
+<section class="article-hero">
+  <div class="hero-text">
+    <div class="hero-badge mono">Research 01</div>
+    <h1>U.S. Government Bonds, <em>On-Chain.</em></h1>
+    <p class="hero-desc">How BlackRock, Ondo, and Circle are putting the world's safest asset on blockchain rails — and why $7.4B in T-bills now live as tokens earning 4-5% yield.</p>
+    <div class="hero-stats">
+      <div class="hero-stat-card"><div class="stat-val">$7.4B</div><div class="stat-label">Treasury TVL</div></div>
+      <div class="hero-stat-card"><div class="stat-val">640%</div><div class="stat-label">YoY Growth</div></div>
+      <div class="hero-stat-card"><div class="stat-val">4.2%</div><div class="stat-label">Avg Yield</div></div>
+    </div>
+  </div>
+  <div class="hero-live">
+    <h3><span class="live-dot"></span> Live Data</h3>
+    <div class="live-kpi-row">
+      <div class="live-kpi"><div class="lk-val mono" id="lk-buidl">Loading...</div><div class="lk-label">BlackRock BUIDL</div></div>
+      <div class="live-kpi"><div class="lk-val mono" id="lk-usdy">Loading...</div><div class="lk-label">Ondo USDY</div></div>
+      <div class="live-kpi"><div class="lk-val mono" id="lk-usyc">Loading...</div><div class="lk-label">Circle USYC</div></div>
+      <div class="live-kpi"><div class="lk-val mono" id="lk-spiko">Loading...</div><div class="lk-label">Spiko</div></div>
+    </div>
+    <canvas id="chart-hero" height="160"></canvas>
+    <p style="font-size:0.6rem;color:var(--text-muted);margin-top:0.5rem;text-align:right;" class="mono">
+      Data from Dune Analytics
+    </p>
+  </div>
+</section>
+
+<!-- LAYER 1: LEARN IT -->
+<div class="section-divider"></div>
+<section class="section">
+  <div class="section-label">Learn</div>
+  <div class="article-body">
+<div class="callout"><div class="callout-title">Overview</div><p>How blockchain is turning $26 trillion in U.S. government bonds into a 24/7, borderless financial instrument — and why it matters to you.</p></div>
+<hr>
+<h3>The Simple Version</h3>
+<p>Imagine you could buy a piece of a U.S. Treasury bond — the safest investment on the planet — for as little as $5. No bank account required. No broker. No waiting 2 days for it to settle. Just connect your crypto wallet and start earning 4–5% yield, backed by the full faith of the U.S. government.</p>
+<p>That's tokenized Treasuries.</p>
+<p>Two years ago, this market barely existed. Today, it's worth over <strong>$7.5 billion</strong> and growing fast. BlackRock, Franklin Templeton, and Ondo Finance now manage billions in these products. And the market for tokenized assets overall is projected to hit <strong>$2 trillion by 2030</strong>.</p>
+<p>This article breaks down everything you need to know — what tokenized Treasuries are, how they work under the hood, who the major players are, what risks exist, and why this might be the most important shift happening in crypto right now.</p>
+<hr>
+<h3>What Are Tokenized Treasuries?</h3>
+<p>Let's start from scratch.</p>
+<p>A <strong>U.S. Treasury bond</strong> (or T-bill) is essentially an IOU from the U.S. government. You lend money to the government, and they pay you back with interest. It's considered the safest investment in the world because the U.S. government has never defaulted on its debt.</p>
+<p>Traditionally, buying Treasuries requires a brokerage account, minimum investments of $1,000+, and settlement takes 1–2 business days through a complex chain of intermediaries — primary dealers, the DTCC, clearinghouses, and custodians.</p>
+<p><strong>Tokenized Treasuries</strong> take these same government bonds and represent them as digital tokens on a blockchain. Each token is backed 1:1 by real Treasury bills held in custody by a regulated institution.</p>
+<p>Think of it like this: the physical bond sits in a vault, and a digital "receipt" (the token) lives on the blockchain. When you hold the token, you own the economic rights to that bond — the yield, the principal, everything.</p>
+<hr>
+<h3>How Does It Actually Work?</h3>
+<p>Here's the step-by-step process:</p>
+<p><strong>Step 1 — Issuer buys the bonds.</strong> A licensed financial institution (like BlackRock or Ondo Finance) purchases U.S. Treasury bills from the government through normal channels.</p>
+<p><strong>Step 2 — Bonds go into custody.</strong> The purchased Treasuries are held by a qualified custodian — a regulated entity like Bank of New York Mellon — that keeps the assets separate from the issuer's own funds. This protects you if the issuer ever goes bankrupt.</p>
+<p><strong>Step 3 — Tokens are minted.</strong> For every dollar of Treasuries held in custody, equivalent tokens are minted on the blockchain. These tokens are ERC-20 compatible, meaning they work across the Ethereum ecosystem.</p>
+<p><strong>Step 4 — You buy the tokens.</strong> You swap stablecoins (like USDC) for these Treasury tokens through the issuer's platform or a DeFi protocol.</p>
+<p><strong>Step 5 — You earn yield.</strong> The underlying Treasury bills generate interest. That yield gets passed to you in one of two ways: either the token's price gradually increases (price appreciation model), or additional tokens are deposited into your wallet automatically (rebasing model).</p>
+<p><strong>Step 6 — Redemption.</strong> When you want out, you burn your tokens and receive stablecoins back. The issuer redeems the corresponding Treasury position. Some platforms offer instant redemption; others take 1–3 business days.</p>
+<hr>
+<h3>Why Does This Matter? TradFi vs. DeFi</h3>
+<p>To understand why tokenized Treasuries are a big deal, compare the traditional process with the blockchain version:</p>
+<div class="compare-table-wrap"><table class="compare-table"><thead><tr><th>Feature</th><th>Traditional Treasuries</th><th>Tokenized Treasuries</th></tr></thead><tbody><tr><td><strong>Settlement Time</strong></td><td>T+2 days (two business days)</td><td>Near-instant (minutes)</td></tr><tr><td><strong>Minimum Investment</strong></td><td>$1,000+ through brokerages</td><td>As low as $5</td></tr><tr><td><strong>Trading Hours</strong></td><td>9:00 AM – 5:00 PM ET, weekdays only</td><td>24/7/365</td></tr><tr><td><strong>Intermediaries</strong></td><td>5–7 middlemen (broker, dealer, DTCC, custodian, etc.)</td><td>Smart contract + custodian</td></tr><tr><td><strong>Fees</strong></td><td>0.5–1.5% management fees</td><td>0.15–0.50%</td></tr><tr><td><strong>Access</strong></td><td>Requires bank account, brokerage, KYC</td><td>Crypto wallet (some require KYC)</td></tr><tr><td><strong>Composability</strong></td><td>None — bonds sit idle</td><td>Can be used as collateral in DeFi</td></tr></tbody></table></div>
+<p>The last point — <strong>composability</strong> — is the game-changer. In the traditional world, if you own Treasury bonds, they just sit there generating yield. In DeFi, tokenized Treasuries can be used as collateral on Aave, supplied to lending protocols, or composed into structured products. Your "safe" asset suddenly becomes a productive building block for your entire portfolio.</p>
+<hr>
+<h3>The $245 Billion Yield Gap</h3>
+<p>Here's a stat that should make you pay attention:</p>
+<p>The stablecoin market is worth over <strong>$307 billion</strong>. Of that, roughly <strong>80%</strong> — about $245 billion — earns absolutely zero yield. It just sits in wallets doing nothing.</p>
+<p>Meanwhile, tokenized Treasuries pay <strong>4–5% APY</strong>, backed by the U.S. government.</p>
+<p>That $245 billion sitting idle isn't just a gap. It's the single biggest yield opportunity in crypto right now. Every dollar of idle USDC that moves into a tokenized Treasury product is a dollar that starts generating government-backed returns.</p>
+<p>This is exactly why MakerDAO held approximately $900 million in RWA collateral (mostly Treasuries) by mid-2025 to back its DAI stablecoin. It's why Frax's sFRAX vault directly purchases Treasuries and passes through the yield. The smart money has already figured this out.</p>
+<hr>
+<h3>The Market Today: Who's Winning?</h3>
+<p>The tokenized Treasury market has consolidated around several major players. Here's who matters:</p>
+<h3>BlackRock — BUIDL (USD Institutional Digital Liquidity Fund)</h3>
+<p>BlackRock's BUIDL fund launched in March 2024 and exploded to over <strong>$2.3 billion</strong> in assets. It represents roughly 32% of the entire tokenized Treasury market. BUIDL invests in cash, U.S. Treasuries, and repos, with Bank of New York Mellon handling custody. The minimum investment is $250,000, positioning it squarely for institutional investors. Redemptions are made in USDC.</p>
+<p>BUIDL is significant because it's BlackRock — the world's largest asset manager with $10+ trillion under management — putting its full weight behind tokenization.</p>
+<h3>Ondo Finance — USDY and OUSG</h3>
+<p>Ondo Finance has become the leading crypto-native player in tokenized Treasuries, managing over <strong>$2.5 billion</strong> in TVL with 404% year-over-year growth. They offer two main products:</p>
+<p><strong>USDY</strong> (US Dollar Yield) — A yield-bearing stablecoin-like product backed by short-term Treasuries. Aimed at retail and DeFi users, with lower minimums than BUIDL.</p>
+<p><strong>OUSG</strong> (Ondo US Government) — Direct exposure to short-term U.S. Treasuries, designed for institutional investors.</p>
+<p>Ondo has expanded aggressively across chains, and recently launched tokenized stock products as well.</p>
+<h3>Franklin Templeton — BENJI</h3>
+<p>Franklin Templeton, a $1.5 trillion asset manager, launched the first U.S.-registered fund to use a public blockchain for processing transactions and recording share ownership. Their BENJI token represents shares in the Franklin OnChain U.S. Government Money Fund. It was one of the earliest institutional entries into tokenized Treasuries.</p>
+<h3>Hashnote — USYC</h3>
+<p>Hashnote's USYC has grown rapidly, reaching over <strong>$1.3 billion</strong>. It's a tokenized money-market fund offering roughly 5% APY on short-term Treasuries, available across multiple blockchains.</p>
+<h3>Other Players</h3>
+<p><strong>Superstate</strong> (USTB), <strong>WisdomTree</strong>, <strong>Spiko</strong> ($500M+ in tokenized money market funds), <strong>Ethena</strong> (USDtb), and several others are competing in this space. The total ecosystem now spans <strong>49 products</strong> across multiple blockchains.</p>
+<hr>
+<h3>The Technical Architecture</h3>
+<p>For those who want to understand what's happening under the hood, tokenized Treasuries rely on several key technical components.</p>
+<h3>ERC-3643: Compliance at the Token Level</h3>
+<p>Unlike regular ERC-20 tokens that anyone can freely trade, tokenized Treasury tokens need to comply with securities regulations. This is where <strong>ERC-3643</strong> comes in.</p>
+<p>ERC-3643 (originally called T-REX, or Token for Regulated Exchanges) is an Ethereum token standard specifically designed for regulated assets. It enforces compliance directly at the smart contract level:</p>
+<p><strong>Identity verification</strong> — Only wallets that have been verified through KYC/AML checks can hold or transfer the tokens. This is managed through an on-chain identity system called ONCHAINID.</p>
+<p><strong>Transfer restrictions</strong> — Before any transaction executes, the smart contract checks if both sender and receiver meet the compliance rules. If they don't, the transfer is automatically blocked.</p>
+<p><strong>Issuer controls</strong> — Issuers retain the ability to freeze tokens, force transfers (for legal compliance), and recover tokens if an investor loses access to their wallet.</p>
+<p>To date, over <strong>$32 billion</strong> in real-world assets have been tokenized using ERC-3643. The SEC Chairman has cited it as an example of how compliance can be enforced on tokenized assets, and it's being proposed as an ISO international standard.</p>
+<h3>Chainlink CCIP: The Cross-Chain Bridge</h3>
+<p>One of the biggest challenges for tokenized assets is that they need to work across multiple blockchains. A Treasury token on Ethereum needs to be usable on Solana, Arbitrum, Base, and other networks.</p>
+<p><strong>Chainlink's Cross-Chain Interoperability Protocol (CCIP)</strong> solves this. It's the infrastructure layer that enables tokenized assets to move securely between blockchains. Think of it as the highway system connecting different blockchain "cities."</p>
+<p>Key features include:</p>
+<p><strong>Zero-slippage transfers</strong> — Unlike traditional bridges that use liquidity pools, CCIP uses burn/mint mechanisms so tokens can transfer instantly without size limits or slippage.</p>
+<p><strong>Privacy preservation</strong> — CCIP's Private Transactions feature keeps sensitive data — amounts, counterparties, transaction details — encrypted. This is critical for institutional adoption, where banks can't have their transactions visible on a public blockchain.</p>
+<p><strong>60+ blockchain connections</strong> — A single integration connects to over 60 public and private blockchains.</p>
+<p>In 2025, CCIP became the default interoperability standard for tokenized assets. SWIFT — the messaging system used by 11,000+ banks globally — went live with CCIP integration, enabling banks to transact with tokenized assets directly through their existing infrastructure. Coinbase selected CCIP as its exclusive bridge for $7 billion in wrapped assets. Ondo, Spiko, and dozens of others adopted it as their cross-chain standard.</p>
+<h3>Chainlink Proof of Reserve</h3>
+<p>Another critical piece of infrastructure is <strong>Chainlink Proof of Reserve</strong>, which provides real-time, on-chain verification that the tokens are actually backed by the claimed assets. Instead of trusting an issuer's quarterly report, anyone can verify the collateral backing at any time. This is transparency that traditional finance simply cannot offer.</p>
+<hr>
+<h3>Three Challenges That Must Be Solved</h3>
+<p>Despite the explosive growth, tokenized Treasuries face three fundamental problems that need solving before they can reach mainstream adoption:</p>
+<h3>1. The Data and Compliance Problem</h3>
+<p>Tokenized securities are still securities. They must comply with KYC/AML regulations, investor accreditation requirements, and jurisdictional restrictions. The challenge is doing all of this on-chain, automatically, across multiple jurisdictions with different laws.</p>
+<p>The U.S., EU (under MiCA), Singapore, and Switzerland all have different regulatory frameworks. A token that's compliant in one jurisdiction might not be in another. Standards like ERC-3643 are helping, but the regulatory patchwork remains a friction point.</p>
+<h3>2. The Liquidity Problem</h3>
+<p>Tokenized Treasuries are growing fast, but secondary market liquidity is still thin compared to the $1 trillion+ daily volume in traditional Treasury markets. Many tokenized products can only be redeemed through the issuer — there isn't yet a deep, decentralized market where you can instantly sell large positions.</p>
+<p>Without active market-making or buyback programs, tokenized assets can sit idle. This is similar to what happened with early NFT projects — the novelty of tokenization alone doesn't create liquidity.</p>
+<h3>3. The Cross-Chain Synchronization Problem</h3>
+<p>When a Treasury token exists on multiple blockchains (Ethereum, Solana, Arbitrum), keeping the supply, ownership records, and compliance state synchronized across all chains is extremely complex. If someone redeems on Ethereum, the Solana supply needs to update. If a wallet gets flagged for sanctions on one chain, it needs to be blocked everywhere.</p>
+<p>CCIP and similar protocols are addressing this, but it remains an active engineering challenge.</p>
+<hr>
+<h3>How Tokenized Treasuries Are Already Being Used in DeFi</h3>
+<p>Tokenized Treasuries aren't just sitting in wallets earning yield. They're becoming foundational building blocks across DeFi:</p>
+<p><strong>Backing stablecoins</strong> — MakerDAO held approximately $900 million in Treasury-backed RWA collateral to back its DAI stablecoin by mid-2025. Instead of relying purely on volatile crypto collateral, DAI is now partially backed by the safest asset in the world.</p>
+<p><strong>Collateral for lending</strong> — On protocols like Aave and Morpho, users can deposit tokenized Treasuries as collateral to borrow other assets. This lets you maintain exposure to Treasury yields while accessing liquidity for other investments.</p>
+<p><strong>Yield strategies</strong> — On Pendle and similar platforms, tokenized Treasury yields are being split, traded, and composed into structured rate products. These platforms are becoming the price-discovery layer for short-term interest rates in DeFi.</p>
+<p><strong>Institutional collateral</strong> — J.P. Morgan's Tokenized Collateral Network enables tokenized fund shares (including Treasury-backed funds) to be pledged as collateral in real-time, replacing the multi-day settlement process in traditional markets.</p>
+<hr>
+<h3>The GENIUS Act and Regulatory Clarity</h3>
+<p>In 2025, the <strong>GENIUS Act</strong> (Guiding and Establishing National Innovation for U.S. Stablecoins) provided significant regulatory clarity for the stablecoin market. By establishing clear rules for stablecoin issuance and reserves, the law made it safer and cheaper for people to trade between stablecoins and tokenized assets.</p>
+<p>This had a direct impact on tokenized Treasuries. Clearer stablecoin regulation means more confidence in the on/off ramps between dollars and Treasury tokens. When you know USDC is properly regulated and backed, you're more comfortable swapping it for USDY.</p>
+<p>The U.S. Treasury Department itself acknowledged in its 2024 TBAC report that responsible tokenization could expand participation in government debt markets while maintaining investor protections.</p>
+<hr>
+<h3>Who Is This For?</h3>
+<p>Tokenized Treasuries aren't just for crypto whales or institutions. Different users benefit in different ways:</p>
+<p><strong>For the crypto-native investor</strong> — If you're holding stablecoins on-chain, tokenized Treasuries are the easiest way to earn risk-free yield instead of letting your money sit idle. It's the difference between your USDC earning 0% and earning 4.5%.</p>
+<p><strong>For the DeFi power user</strong> — Tokenized Treasuries give you a stable, yield-bearing collateral asset. Use it on Aave, compose it on Pendle, or hedge your portfolio with the safest asset class in finance.</p>
+<p><strong>For institutions</strong> — Faster settlement, lower costs, 24/7 access, and programmable collateral management. J.P. Morgan, Fidelity, and dozens of banks are already building this into their operations.</p>
+<p><strong>For the developing world</strong> — A farmer in Nigeria or a teacher in Indonesia can now access U.S. government bond yields from their phone. No bank account, no minimum investment, no geographic restrictions. This is genuine financial democratization.</p>
+<hr>
+<h3>The Bigger Picture: Why This Is Just the Beginning</h3>
+<p>Let's zoom out.</p>
+<p>The global bond market is worth <strong>$130 trillion</strong>. The real estate market is <strong>$330 trillion</strong>. Global equities are <strong>$100+ trillion</strong>. Today, tokenized assets represent about <strong>$24 billion</strong> — that's 0.004% of just the bond market alone.</p>
+<p>Forecasts vary, but most credible estimates project the tokenized asset market reaching <strong>$2–18.9 trillion by 2030–2033</strong>. Even the conservative end of that range represents 100x growth from today.</p>
+<p>Tokenized Treasuries are the tip of the spear. They're the simplest, safest, most regulated category of tokenized assets. If tokenization can't work for Treasuries — the most liquid, most trusted financial instrument on earth — it can't work for anything.</p>
+<p>But it is working. And the holders are growing: tokenized Treasury holders surged <strong>660% to 13,200</strong> since January 2024, according to recent data.</p>
+<p>The question isn't whether tokenization will transform finance. The question is how fast.</p>
+<hr>
+<h3>Start Exploring</h3>
+<p>If you want to track the tokenized Treasury market in real-time, here are the best resources:</p>
+<p><strong>rwa.xyz</strong> — The most comprehensive data dashboard for all tokenized real-world assets, including detailed Treasury data.</p>
+<p><strong>My RWA Analytics Dashboard on Dune</strong> — I built a dashboard tracking $23B+ in tokenized assets across 136 protocols, including whale transfers, institutional flows, and concentration risk analysis. [Link to your Dune dashboard]</p>
+<p><strong>CoinGecko 2025 RWA Report</strong> — Comprehensive annual report on the state of tokenized assets.</p>
+<hr>
+<div class="callout"><div class="callout-title">Overview</div><p>This is Part 1 of my RWA research series. Part 2 will be a deep-dive data analysis of what the on-chain data tells us about where institutional money is actually flowing — using original analytics from my Dune dashboard. Follow me to catch it when it drops.</p></div>
+<div class="callout"><div class="callout-title">Overview</div><p>If this helped you understand tokenized Treasuries, share it with someone who's still parking their stablecoins at 0%.</p></div>
+<hr>
+<div class="callout"><div class="callout-title">Overview</div><p>Data sources: rwa.xyz, DefiLlama, CoinGecko, Dune Analytics, Chainlink, ERC-3643 Association, INX Research</p></div>
+
+    <h3>Risks to Consider</h3>
+    <div class="risk-row">
+      <div class="risk-pill"><span class="risk-dot med"></span><span class="risk-label">Smart Contract</span><span class="risk-level med">MEDIUM</span></div>
+      <div class="risk-pill"><span class="risk-dot high"></span><span class="risk-label">Regulatory</span><span class="risk-level high">HIGH</span></div>
+      <div class="risk-pill"><span class="risk-dot med"></span><span class="risk-label">Counterparty</span><span class="risk-level med">MEDIUM</span></div>
+      <div class="risk-pill"><span class="risk-dot med"></span><span class="risk-label">Redemption Delay</span><span class="risk-level med">MEDIUM</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- LAYER 2: SEE IT -->
+<div class="section-divider"></div>
+<section class="section">
+  <div class="section-label">Live On-Chain Data</div>
+  <h2>See It Live</h2>
+  <p class="section-desc">Filtered data from Dune Analytics for this asset class.</p>
+  <div class="live-grid">
+    <div class="live-card">
+      <h3><span class="dot"></span> Protocol TVL</h3>
+      <canvas id="chart-tvl" height="240"></canvas>
+    </div>
+    <div class="live-card">
+      <h3><span class="dot" style="background:var(--accent-blue);"></span> Activity</h3>
+      <canvas id="chart-activity" height="240"></canvas>
+    </div>
+    <div class="live-card full">
+      <h3><span class="dot" style="background:var(--accent-yellow);"></span> Related Protocols</h3>
+      <table class="data-table" id="table-protocols">
+        <thead><tr><th>Protocol</th><th>TVL</th><th>Category</th><th>7d Change</th></tr></thead>
+        <tbody><tr><td colspan="4" style="text-align:center;padding:1.5rem;"><div class="kpi-loading"></div></td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- LAYER 3: EXPLORE -->
+<div class="section-divider"></div>
+<section class="section">
+  <div class="section-label">Go Deeper</div>
+  <h2>Explore</h2>
+  <p class="section-desc">Drill into the data with institutional-grade tools.</p>
+  <div class="explore-grid">
+    <a href="https://app.rwa.xyz/treasuries" target="_blank" class="explore-card">
+      <div class="explore-icon">📊</div>
+      <div class="explore-title">rwa.xyz — Treasuries</div>
+      <div class="explore-desc">Individual fund data, yields, AUM history.</div>
+      <div class="explore-link mono">Explore →</div>
+    </a>
+    <a href="https://dune.com/adu0x" target="_blank" class="explore-card">
+      <div class="explore-icon">🔮</div>
+      <div class="explore-title">Dune Dashboard</div>
+      <div class="explore-desc">Full on-chain analytics with 18 widgets.</div>
+      <div class="explore-link mono">Explore →</div>
+    </a>
+    <a href="https://etherscan.io/token/0x7712c34205737192402172409a8F7ccef8aA2AEc" target="_blank" class="explore-card">
+      <div class="explore-icon">🔍</div>
+      <div class="explore-title">BUIDL on Etherscan</div>
+      <div class="explore-desc">BlackRock's tokenized fund contract.</div>
+      <div class="explore-link mono">Explore →</div>
+    </a>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+<div class="back-bar"><a href="index.html">← Back to Dashboard</a></div>
+
+<!-- DUNE API -->
+<script>
+const DUNE_API_KEY = 'YBDcEyiKz0mXLJJX4kOC6bBFcvN68UUi';
+const DUNE_BASE = 'https://api.dune.com/api/v1/query';
+Chart.defaults.color = '#8888a0';
+Chart.defaults.borderColor = '#1e1e2e';
+Chart.defaults.font.family = "'JetBrains Mono', monospace";
+Chart.defaults.font.size = 10;
+
+async function fetchDune(qid, limit=50) {
+  try {
+    const r = await fetch(DUNE_BASE+'/'+qid+'/results?limit='+limit, { headers:{'X-Dune-API-Key':DUNE_API_KEY} });
+    if (!r.ok) throw new Error('HTTP '+r.status);
+    const d = await r.json();
+    const rows = d.result?.rows || [];
+    if (rows.length) console.log('Q'+qid+' cols:', Object.keys(rows[0]), 'sample:', rows[0]);
+    return rows;
+  } catch(e) { console.error('Q'+qid+' fail:', e); return null; }
+}
+
+function fmt(n) {
+  if (n>=1e9) return '$'+(n/1e9).toFixed(1)+'B';
+  if (n>=1e6) return '$'+(n/1e6).toFixed(1)+'M';
+  if (n>=1e3) return '$'+(n/1e3).toFixed(0)+'K';
+  return '$'+n.toFixed(0);
+}
+
+// Load leaderboard filtered for this category
+async function init() {
+  const rows = await fetchDune(6676500, 50);
+  if (!rows) return;
+  
+  const keys = Object.keys(rows[0]);
+  const nameKey = keys.find(k => typeof rows[0][k] === 'string' && k.includes('name')) || keys[0];
+  const tvlKey = keys.find(k => typeof rows[0][k] === 'number' && (k.includes('tvl') || k.includes('TVL'))) || keys.find(k => typeof rows[0][k] === 'number');
+  const catKey = keys.find(k => k.includes('category') || k.includes('type')) || '';
+  const changeKey = keys.find(k => k.includes('7d') || k.includes('change')) || '';
+  
+  // Populate hero live KPIs
+    const buidlRow = rows.find(r => (r[nameKey]||'').toLowerCase().includes('blackrock'));
+    if (buidlRow) document.getElementById('lk-buidl').textContent = fmt(buidlRow[tvlKey]);
+    const usdyRow = rows.find(r => (r[nameKey]||'').toLowerCase().includes('ondo'));
+    if (usdyRow) document.getElementById('lk-usdy').textContent = fmt(usdyRow[tvlKey]);
+    const usycRow = rows.find(r => (r[nameKey]||'').toLowerCase().includes('circle'));
+    if (usycRow) document.getElementById('lk-usyc').textContent = fmt(usycRow[tvlKey]);
+    const spikoRow = rows.find(r => (r[nameKey]||'').toLowerCase().includes('spiko'));
+    if (spikoRow) document.getElementById('lk-spiko').textContent = fmt(spikoRow[tvlKey]);
+
+  // Populate protocol table
+  const tbody = document.querySelector('#table-protocols tbody');
+  const display = rows.slice(0, 15);
+  tbody.innerHTML = display.map(r => {
+    const tvl = r[tvlKey]; const change = r[changeKey];
+    return '<tr><td><strong>'+(r[nameKey]||'—')+'</strong></td><td>'+(tvl?fmt(tvl):'—')+'</td><td>'+(r[catKey]||'—')+'</td><td class="'+(change>=0?'pos':'neg')+'">'+(change!=null?(change>=0?'+':'')+change.toFixed(1)+'%':'—')+'</td></tr>';
+  }).join('');
+
+  // Charts with top protocols by TVL
+  const sorted = [...rows].sort((a,b) => (b[tvlKey]||0) - (a[tvlKey]||0)).slice(0,8);
+  new Chart(document.getElementById('chart-tvl'), {
+    type:'bar', data:{ labels:sorted.map(r=>r[nameKey]), datasets:[{data:sorted.map(r=>r[tvlKey]),backgroundColor:'#00ff88',borderRadius:4}] },
+    options:{ responsive:true, indexAxis:'y', plugins:{legend:{display:false}}, scales:{x:{ticks:{callback:v=>fmt(v)},grid:{color:'#1e1e2e'}},y:{grid:{display:false}}} }
+  });
+
+  // Activity chart - use change data
+  if (changeKey) {
+    const withChange = rows.filter(r => r[changeKey] != null).slice(0,8);
+    new Chart(document.getElementById('chart-activity'), {
+      type:'bar', data:{ labels:withChange.map(r=>r[nameKey]),
+        datasets:[{data:withChange.map(r=>r[changeKey]),backgroundColor:withChange.map(r=>r[changeKey]>=0?'#00ff88':'#ff4757'),borderRadius:4}] },
+      options:{ responsive:true, plugins:{legend:{display:false}}, scales:{y:{ticks:{callback:v=>v+'%'},grid:{color:'#1e1e2e'}},x:{grid:{display:false}}} }
+    });
+  }
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

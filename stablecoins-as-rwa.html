@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stablecoins As Rwa — RWA Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Sora:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg-primary: #0a0a0f; --bg-secondary: #12121a; --bg-card: #16161f;
+    --bg-card-hover: #1c1c28; --accent: #1a73e8; --accent-green: #00ff88;
+    --accent-blue: #4d7cff; --accent-purple: #a855f7; --accent-red: #ff4757;
+    --accent-yellow: #ffd700; --accent-orange: #ff6b35;
+    --text-primary: #e8e8ed; --text-secondary: #8888a0; --text-muted: #55556a; --border: #1e1e2e;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg-primary); color:var(--text-primary); font-family:'Sora',sans-serif; line-height:1.8; }
+  .mono { font-family:'JetBrains Mono',monospace; }
+  ::-webkit-scrollbar { width:6px; } ::-webkit-scrollbar-track { background:var(--bg-primary); }
+  ::-webkit-scrollbar-thumb { background:var(--text-muted); border-radius:3px; }
+
+  .nav { position:fixed; top:0; left:0; right:0; z-index:100; padding:0.75rem 2rem;
+    background:rgba(10,10,15,0.9); backdrop-filter:blur(16px); border-bottom:1px solid var(--border);
+    display:flex; justify-content:space-between; align-items:center; }
+  .nav a { color:var(--text-secondary); text-decoration:none; font-size:0.85rem; transition:color 0.2s; }
+  .nav a:hover { color:var(--accent); }
+  .nav .logo { font-weight:700; color:var(--text-primary); font-size:1rem; }
+  .nav .logo span { color:var(--accent-green); }
+
+  .article-hero { padding:7rem 2rem 3rem; max-width:1200px; margin:0 auto;
+    display:grid; grid-template-columns:1fr 1fr; gap:3rem; align-items:center; }
+  .hero-badge { display:inline-block; font-family:'JetBrains Mono',monospace; font-size:0.6rem;
+    letter-spacing:2px; color:var(--accent); padding:0.3rem 0.8rem;
+    border:1px solid color-mix(in srgb, var(--accent) 30%, transparent); border-radius:20px;
+    margin-bottom:1.5rem; text-transform:uppercase; }
+  .article-hero h1 { font-size:clamp(2rem,4vw,3rem); font-weight:800; line-height:1.15; margin-bottom:1rem; }
+  .article-hero h1 em { font-style:normal; color:var(--accent); }
+  .hero-desc { color:var(--text-secondary); font-size:0.95rem; line-height:1.7; margin-bottom:2rem; }
+  .hero-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; }
+  .hero-stat-card { background:var(--bg-card); border:1px solid var(--border); border-radius:10px; padding:1.25rem; text-align:center; }
+  .hero-stat-card .stat-val { font-family:'JetBrains Mono',monospace; font-size:1.5rem; font-weight:700; color:var(--accent); }
+  .hero-stat-card .stat-label { font-size:0.7rem; color:var(--text-muted); margin-top:0.25rem; }
+
+  .hero-live { background:var(--bg-card); border:1px solid var(--border); border-radius:14px;
+    padding:1.5rem; position:relative; overflow:hidden; }
+  .hero-live::before { content:''; position:absolute; top:0; left:0; right:0; height:3px;
+    background:linear-gradient(90deg, var(--accent), var(--accent-blue)); }
+  .hero-live h3 { font-size:0.75rem; font-family:'JetBrains Mono',monospace; letter-spacing:2px;
+    text-transform:uppercase; color:var(--accent); margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem; }
+  .live-dot { width:6px; height:6px; border-radius:50%; background:var(--accent); animation:pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+  .live-kpi-row { display:grid; grid-template-columns:repeat(2,1fr); gap:0.75rem; margin-bottom:1rem; }
+  .live-kpi { background:color-mix(in srgb, var(--accent) 5%, transparent);
+    border:1px solid color-mix(in srgb, var(--accent) 12%, transparent);
+    border-radius:8px; padding:0.75rem; text-align:center; }
+  .live-kpi .lk-val { font-family:'JetBrains Mono',monospace; font-size:1.1rem; font-weight:700; }
+  .live-kpi .lk-label { font-size:0.6rem; color:var(--text-muted); margin-top:0.15rem; }
+
+  .section { padding:4rem 2rem; max-width:1200px; margin:0 auto; }
+  .section-divider { width:100%; max-width:1200px; margin:0 auto; height:1px;
+    background:linear-gradient(90deg, transparent, var(--border), transparent); }
+  .section-label { font-family:'JetBrains Mono',monospace; font-size:0.65rem; letter-spacing:3px;
+    text-transform:uppercase; color:var(--accent); margin-bottom:1rem;
+    display:flex; align-items:center; gap:0.75rem; }
+  .section-label::before { content:''; width:20px; height:1px; background:var(--accent); }
+  .section h2 { font-size:1.8rem; font-weight:700; margin-bottom:0.75rem; }
+  .section-desc { color:var(--text-secondary); font-size:0.9rem; max-width:650px; margin-bottom:2rem; }
+
+  .article-body { max-width:800px; }
+  .article-body h3 { font-size:1.2rem; font-weight:700; margin:2.5rem 0 0.75rem;
+    padding-top:1.5rem; border-top:1px solid var(--border); color:var(--text-primary); }
+  .article-body h3:first-child { border-top:none; padding-top:0; margin-top:0; }
+  .article-body p { color:var(--text-secondary); font-size:0.92rem; margin-bottom:1rem; line-height:1.8; }
+  .article-body strong { color:var(--text-primary); }
+  .article-body ul { list-style:none; padding:0; margin:0.5rem 0 1.5rem; }
+  .article-body ul li { padding:0.4rem 0 0.4rem 1.5rem; position:relative; color:var(--text-secondary); font-size:0.9rem; }
+  .article-body ul li::before { content:'▸'; position:absolute; left:0; color:var(--accent); }
+  .article-body hr { border:none; height:1px; background:linear-gradient(90deg,transparent,var(--border),transparent); margin:2rem 0; }
+
+  .callout { background:var(--bg-card); border-left:3px solid var(--accent);
+    border-radius:0 10px 10px 0; padding:1.25rem 1.5rem; margin:1.5rem 0; }
+  .callout .callout-title { font-family:'JetBrains Mono',monospace; font-size:0.7rem;
+    letter-spacing:1px; text-transform:uppercase; color:var(--accent); margin-bottom:0.5rem; }
+  .callout p { margin-bottom:0; font-size:0.85rem; }
+
+  .compare-table-wrap { background:var(--bg-card); border:1px solid var(--border); border-radius:12px; overflow:hidden; margin:1.5rem 0; }
+  .compare-table { width:100%; border-collapse:collapse; font-size:0.82rem; }
+  .compare-table th { font-family:'JetBrains Mono',monospace; font-size:0.65rem; letter-spacing:1px;
+    text-transform:uppercase; color:var(--accent); padding:0.85rem 1rem; text-align:left;
+    background:color-mix(in srgb, var(--accent) 5%, transparent); border-bottom:1px solid var(--border); }
+  .compare-table td { padding:0.7rem 1rem; color:var(--text-secondary); border-bottom:1px solid rgba(30,30,46,0.4); }
+  .compare-table tr:hover td { background:rgba(255,255,255,0.02); }
+  .compare-table .highlight-val { color:var(--accent); font-weight:600; }
+
+  .risk-row { display:flex; flex-wrap:wrap; gap:0.75rem; margin-top:1.5rem; }
+  .risk-pill { display:flex; align-items:center; gap:0.5rem; background:var(--bg-card);
+    border:1px solid var(--border); border-radius:8px; padding:0.6rem 1rem; font-size:0.8rem; }
+  .risk-pill .risk-dot { width:8px; height:8px; border-radius:50%; }
+  .risk-pill .risk-dot.high { background:var(--accent-red); }
+  .risk-pill .risk-dot.med { background:var(--accent-yellow); }
+  .risk-pill .risk-label { color:var(--text-secondary); }
+  .risk-pill .risk-level { font-family:'JetBrains Mono',monospace; font-size:0.65rem; font-weight:600; }
+  .risk-pill .risk-level.high { color:var(--accent-red); }
+  .risk-pill .risk-level.med { color:var(--accent-yellow); }
+
+  .live-grid { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; }
+  .live-card { background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:1.5rem; }
+  .live-card.full { grid-column:1/-1; }
+  .live-card h3 { font-size:0.85rem; font-weight:600; margin-bottom:1rem; border:none; padding:0;
+    display:flex; align-items:center; gap:0.5rem; }
+  .live-card h3 .dot { width:8px; height:8px; border-radius:50%; background:var(--accent); }
+  .data-table { width:100%; border-collapse:collapse; font-size:0.8rem; }
+  .data-table th { font-family:'JetBrains Mono',monospace; font-size:0.6rem; letter-spacing:1px;
+    text-transform:uppercase; color:var(--accent); padding:0.7rem 0.75rem; text-align:left;
+    border-bottom:1px solid var(--border); }
+  .data-table td { padding:0.6rem 0.75rem; color:var(--text-secondary); border-bottom:1px solid rgba(30,30,46,0.3); }
+  .data-table .pos { color:var(--accent-green); } .data-table .neg { color:var(--accent-red); }
+  .data-table .kpi-loading { width:16px; height:16px; border:2px solid var(--border);
+    border-top-color:var(--accent); border-radius:50%; animation:spin 0.8s linear infinite; margin:0 auto; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  .explore-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin-top:1.5rem; }
+  .explore-card { background:var(--bg-card); border:1px solid var(--border); border-radius:12px;
+    padding:1.5rem; text-decoration:none; color:inherit; transition:all 0.3s ease;
+    display:flex; flex-direction:column; gap:0.5rem; }
+  .explore-card:hover { border-color:var(--accent); transform:translateY(-2px); }
+  .explore-card .explore-icon { font-size:1.5rem; }
+  .explore-card .explore-title { font-weight:600; font-size:0.95rem; }
+  .explore-card .explore-desc { font-size:0.75rem; color:var(--text-muted); }
+  .explore-card .explore-link { font-family:'JetBrains Mono',monospace; font-size:0.7rem; color:var(--accent); margin-top:auto; }
+
+  .back-bar { max-width:1200px; margin:0 auto; padding:2rem 2rem 3rem; text-align:center; }
+  .back-bar a { display:inline-block; padding:0.75rem 2rem; background:var(--accent); color:var(--bg-primary);
+    text-decoration:none; border-radius:8px; font-weight:600; font-size:0.9rem; transition:opacity 0.2s; }
+  .back-bar a:hover { opacity:0.85; }
+
+  @media (max-width:768px) {
+    .article-hero { grid-template-columns:1fr; padding:6rem 1.25rem 2rem; }
+    .live-grid { grid-template-columns:1fr; } .explore-grid { grid-template-columns:1fr; }
+    .section { padding:3rem 1.25rem; }
+  }
+  body::after { content:''; position:fixed; top:0; left:0; width:100%; height:100%;
+    background:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events:none; z-index:9999; }
+
+  .get-started-box { background:var(--bg-card); border:1px solid var(--accent); border-radius:12px;
+    padding:1.5rem; margin:1.5rem 0; position:relative; overflow:hidden; }
+  .get-started-box::before { content:''; position:absolute; top:0; left:0; right:0; height:3px;
+    background:linear-gradient(90deg, var(--accent), var(--accent-blue)); }
+  .gs-title { font-family:'JetBrains Mono',monospace; font-size:0.7rem; letter-spacing:2px;
+    text-transform:uppercase; color:var(--accent); margin-bottom:1rem; }
+  .gs-steps { display:grid; grid-template-columns:1fr 1fr; gap:0.75rem; margin-bottom:1.25rem; }
+  .gs-step { display:flex; gap:0.75rem; align-items:flex-start; background:rgba(255,255,255,0.02);
+    border:1px solid var(--border); border-radius:8px; padding:0.75rem; }
+  .gs-num { font-family:'JetBrains Mono',monospace; font-size:0.75rem; font-weight:700;
+    color:var(--bg-primary); background:var(--accent); width:22px; height:22px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:2px; }
+  .gs-step div { font-size:0.8rem; color:var(--text-secondary); line-height:1.5; }
+  .gs-step strong { color:var(--text-primary); font-size:0.82rem; }
+  .gs-step a { color:var(--accent); text-decoration:none; }
+  .gs-step a:hover { text-decoration:underline; }
+  .gs-protocols { display:flex; flex-direction:column; gap:0.4rem; margin-bottom:0.75rem; }
+  .gs-proto-link { display:block; font-family:'JetBrains Mono',monospace; font-size:0.72rem;
+    color:var(--accent); text-decoration:none; padding:0.5rem 0.75rem;
+    background:color-mix(in srgb, var(--accent) 5%, transparent);
+    border:1px solid color-mix(in srgb, var(--accent) 15%, transparent);
+    border-radius:6px; transition:all 0.2s; }
+  .gs-proto-link:hover { border-color:var(--accent); background:color-mix(in srgb, var(--accent) 10%, transparent); }
+  .gs-note { font-size:0.72rem; color:var(--text-muted); margin-top:0.5rem; }
+  @media (max-width:768px) { .gs-steps { grid-template-columns:1fr; } }
+
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="index.html" class="logo"><span>RWA</span> Analytics</a>
+  <a href="index.html">← Back to Dashboard</a>
+</nav>
+
+<!-- HERO -->
+<section class="article-hero">
+  <div class="hero-text">
+    <div class="hero-badge mono">Research 05</div>
+    <h1>Stablecoins, <em>The Hidden RWA.</em></h1>
+    <p class="hero-desc">The $250B infrastructure layer nobody recognizes as an RWA. USDT, USDC reserves, the GENIUS Act, and the rise of yield-bearing stables.</p>
+    <div class="hero-stats">
+      <div class="hero-stat-card"><div class="stat-val">$250B+</div><div class="stat-label">Stablecoin Market</div></div>
+      <div class="hero-stat-card"><div class="stat-val">80%</div><div class="stat-label">No-Yield Share</div></div>
+      <div class="hero-stat-card"><div class="stat-val">4-5%</div><div class="stat-label">Yield Stables APY</div></div>
+    </div>
+  </div>
+  <div class="hero-live">
+    <h3><span class="live-dot"></span> Live Data</h3>
+    <div class="live-kpi-row">
+      <div class="live-kpi"><div class="lk-val mono" id="lk-usdt">Loading...</div><div class="lk-label">USDT (Tether)</div></div>
+      <div class="live-kpi"><div class="lk-val mono" id="lk-usdc">Loading...</div><div class="lk-label">USDC (Circle)</div></div>
+      <div class="live-kpi"><div class="lk-val mono" id="lk-dai">Loading...</div><div class="lk-label">DAI (Sky)</div></div>
+      <div class="live-kpi"><div class="lk-val mono" id="lk-sdai">Loading...</div><div class="lk-label">USDS / sDAI</div></div>
+    </div>
+    <canvas id="chart-hero" height="160"></canvas>
+    <p style="font-size:0.6rem;color:var(--text-muted);margin-top:0.5rem;text-align:right;" class="mono">
+      Data from Dune Analytics
+    </p>
+  </div>
+</section>
+
+<!-- LAYER 1: LEARN IT -->
+<div class="section-divider"></div>
+<section class="section">
+  <div class="section-label">Learn</div>
+  <div class="article-body">
+<div class="callout"><div class="callout-title">Overview</div><p>Every tokenized Treasury, every tokenized property, every on-chain loan — they all run on stablecoins. Here's why the biggest RWA isn't gold or real estate. It's the digital dollar.</p></div>
+<hr>
+<h3>The RWA Nobody Recognizes</h3>
+<p>When people talk about tokenized real-world assets, they mention Treasuries, real estate, gold, and private credit. But they forget the biggest one sitting right in front of them.</p>
+<p><strong>Stablecoins are the original RWA.</strong></p>
+<p>Every stablecoin is a tokenized version of a real-world asset — usually the U.S. dollar. USDT is a token representing dollars held in Tether's reserves. USDC is a token representing dollars held in Circle's reserves. They're real-world assets, tokenized on a blockchain, traded 24/7.</p>
+<p>And the scale is staggering:</p>
+<ul><li>Total stablecoin market cap: <strong>$250+ billion</strong> (2025)</li><li>Growth from 2019: <strong>from under $2 billion to $250 billion</strong> — over 100x in 6 years</li><li>Annual on-chain transaction volume: <strong>$4+ trillion</strong> in just the first 8 months of 2025 (83% increase over 2024)</li><li>At one point, stablecoin on-chain volume <strong>exceeded Visa and Mastercard combined</strong></li></ul>
+<p>Stablecoins aren't just a part of the RWA market. They ARE the RWA market's infrastructure. Without stablecoins, none of the other tokenized assets work. You buy tokenized Treasuries with USDC. You pay rent on tokenized real estate in DAI. You deposit into Maple's lending pools with USDT. Stablecoins are the blood that flows through every on-chain financial system.</p>
+<hr>
+<h3>What Is a Stablecoin? (From Absolute Zero)</h3>
+<p>A <strong>stablecoin</strong> is a cryptocurrency designed to maintain a stable price — usually pegged 1:1 to the U.S. dollar. One USDC = $1. One USDT = $1. Always.</p>
+<p>Why does this matter? Because Bitcoin and Ethereum swing 10–20% in a week. You can't run a lending protocol, pay salaries, or price loans in an asset that drops 15% overnight. Stablecoins solve this by giving you the speed and programmability of crypto with the price stability of the dollar.</p>
+<p>Think of stablecoins as <strong>digital dollars that live on the blockchain.</strong> They move instantly, settle in seconds, work 24/7, and can be programmed by smart contracts. They're the bridge between the $250 trillion traditional financial system and the on-chain economy.</p>
+<hr>
+<h3>The Three Types of Stablecoins</h3>
+<h3>1. Fiat-Collateralized (95%+ of the market)</h3>
+<p>These are backed by real dollars (or dollar-equivalent assets like Treasury bills) sitting in a bank or custodian. For every token in circulation, there's supposed to be $1 in reserves.</p>
+<p><strong>USDT (Tether)</strong> — The king. $167+ billion market cap. ~60% of the entire stablecoin market. Launched in 2014 as the first stablecoin ever. Reserves include $100+ billion in U.S. Treasury bonds and repos, making Tether one of the largest non-sovereign holders of U.S. Treasuries globally. In 2024, Tether earned <strong>$13 billion in profit</strong> — more than most banks.</p>
+<p><strong>USDC (Circle/Coinbase)</strong> — The compliance champion. ~$67 billion market cap. ~24% market share. 100% backed by cash and short-term U.S. Treasuries. Monthly audits by Grant Thornton. Regulated, transparent, and the preferred stablecoin for institutional use. Growing 40.9% in 2025 — projected to potentially surpass USDT by 2030. Circle went public in the U.S. in 2025.</p>
+<p>Together, USDT and USDC control <strong>93% of the total stablecoin market.</strong></p>
+<h3>2. Crypto-Collateralized (~3.5% of the market)</h3>
+<p>These are backed by other cryptocurrencies, locked in smart contracts with overcollateralization (you deposit $150 worth of ETH to mint $100 in stablecoins).</p>
+<p><strong>DAI/USDS (MakerDAO/Sky)</strong> — The decentralized OG. ~$7.8 billion market cap. Originally backed purely by crypto collateral, DAI has evolved — as of late 2024, <strong>45% of DAI's backing comes from real-world assets</strong> including U.S. Treasuries and private credit (via Centrifuge). This makes it a hybrid model.</p>
+<h3>3. Algorithmic (~0.2% of the market)</h3>
+<p>These use smart contract algorithms to expand and contract supply to maintain the peg. No real assets backing them.</p>
+<p><strong>Almost extinct</strong> after TerraUSD (UST) collapsed from $0.999 to $0.066 in May 2022, wiping out <strong>$17 billion</strong>. The market has largely rejected this model.</p>
+<hr>
+<h3>What's Actually Backing Your Stablecoins?</h3>
+<p>This is the most important question most people never ask. Here's the breakdown:</p>
+<h3>Tether (USDT) Reserves:</h3>
+<ul><li><strong>82%</strong> cash and cash equivalents (mostly U.S. Treasury bonds)</li><li>$100+ billion in U.S. Treasuries and repos</li><li>Monthly interest income: <strong>~$400 million</strong></li><li>Also holds commercial paper, corporate bonds, precious metals</li><li>Quarterly reports published (audited by BDO Italia)</li><li><strong>Controversy:</strong> Tether has never had a full audit by a Big Four accounting firm. Their reserve composition has been questioned for years. Improving, but not yet at USDC's transparency level.</li></ul>
+<h3>Circle (USDC) Reserves:</h3>
+<ul><li><strong>100%</strong> cash and short-term U.S. Treasury bills</li><li>Held in regulated U.S. financial institutions</li><li><strong>Monthly</strong> independent audits by Grant Thornton</li><li>Full reserve breakdown publicly available</li><li>Considered the gold standard for stablecoin transparency</li></ul>
+<h3>DAI/USDS Reserves:</h3>
+<ul><li>~45% real-world assets (Treasuries, private credit via Centrifuge)</li><li>~55% crypto collateral (ETH, stETH, etc.)</li><li>Overcollateralized — always more collateral than stablecoins issued</li><li>Governed by DAO (decentralized community votes on collateral types)</li></ul>
+<hr>
+<h3>How Stablecoins Power the Entire RWA Ecosystem</h3>
+<p>Here's the connection most people miss: stablecoins aren't just a type of RWA — they're the <strong>settlement layer</strong> for all other RWAs.</p>
+<p><strong>Buying tokenized Treasuries?</strong> You pay with USDC and receive BUIDL or USDY tokens.</p>
+<p><strong>Investing in tokenized real estate?</strong> RealT pays your daily rent in DAI.</p>
+<p><strong>Lending on Maple Finance?</strong> You deposit USDC into Syrup pools and earn yield from institutional loans.</p>
+<p><strong>Trading tokenized gold?</strong> The most liquid trading pair is PAXG/USDT.</p>
+<p><strong>Buying tokenized stocks?</strong> xStocks trades against USDC on exchanges.</p>
+<p>Without stablecoins, the entire tokenized economy grinds to a halt. They are the on-chain equivalent of the dollar in traditional finance — the unit of account, medium of exchange, and store of value that everything else is priced in.</p>
+<hr>
+<h3>Stablecoins vs. Traditional Money Transfer</h3>
+<div class="compare-table-wrap"><table class="compare-table"><thead><tr><th>Feature</th><th>Bank Wire</th><th>PayPal/Venmo</th><th>SWIFT (international)</th><th>Stablecoins</th></tr></thead><tbody><tr><td><strong>Speed</strong></td><td>1–3 business days</td><td>Instant (domestic)</td><td>2–5 business days</td><td><strong>Seconds to minutes</strong></td></tr><tr><td><strong>Cost</strong></td><td>$15–$50</td><td>1–3%</td><td>$25–$50 + FX fees</td><td><strong>$0.01–$2</strong></td></tr><tr><td><strong>Available</strong></td><td>Banking hours</td><td>24/7 (domestic)</td><td>Banking hours</td><td><strong>24/7/365</strong></td></tr><tr><td><strong>Cross-border</strong></td><td>Expensive, slow</td><td>Limited countries</td><td>Available but costly</td><td><strong>Instant, global</strong></td></tr><tr><td><strong>Programmable</strong></td><td>No</td><td>No</td><td>No</td><td><strong>Yes — smart contracts</strong></td></tr><tr><td><strong>Settlement</strong></td><td>T+1 to T+3</td><td>Instant to 1 day</td><td>T+2 to T+5</td><td><strong>Final in seconds</strong></td></tr></tbody></table></div>
+<p>That programmability is the killer feature. A bank wire can't automatically split rent between 50 token holders. A PayPal transfer can't serve as collateral in a lending protocol. Stablecoins can do both because they're programmable money — code can move them, split them, lock them, and distribute them automatically.</p>
+<hr>
+<h3>The GENIUS Act: Stablecoins Get Their Law</h3>
+<p>The <strong>GENIUS Act of 2025</strong> (Guiding and Establishing National Innovation for U.S. Stablecoins) was the landmark moment for the industry. It established:</p>
+<ul><li>A <strong>dual federal-state regulatory framework</strong> for stablecoin issuers</li><li>Requirements for <strong>reserve backing and audits</strong></li><li>Clear <strong>licensing pathways</strong> for stablecoin companies</li><li>Legal recognition of stablecoins as <strong>legitimate financial instruments</strong></li></ul>
+<p>Why it matters for RWAs: Before the GENIUS Act, there was legal uncertainty about whether stablecoins were securities, commodities, or something else. The Act clarified this, which immediately boosted confidence in using stablecoins as the settlement layer for tokenized assets. When institutions know the legal status of the dollars they're using on-chain, they're far more willing to tokenize everything else.</p>
+<p>Other key regulations in 2025:</p>
+<ul><li><strong>EU MiCA</strong> — Full stablecoin regulation in effect. Caps non-euro stablecoin daily transactions at €200 million.</li><li><strong>Hong Kong Stablecoin Bill</strong> — High-threshold licensing regime, effective August 2025.</li></ul>
+<hr>
+<h3>The Rise of Yield-Bearing Stablecoins</h3>
+<p>Here's where it gets really interesting for the RWA narrative. A new category is emerging: <strong>stablecoins that pay you yield.</strong></p>
+<p>Traditional stablecoins (USDC, USDT) pay you nothing. You hold $10,000 in USDC, and a year later you still have $10,000. Meanwhile, the issuer earns 4–5% on the Treasury reserves backing your tokens. Tether pocketed $13 billion in profit in 2024 this way.</p>
+<p>New yield-bearing stablecoins fix this by passing the yield through to holders:</p>
+<p><strong>USDtb</strong> — Backed by tokenized Treasuries, passes Treasury yield to holders.</p>
+<p><strong>USD0 (Usual)</strong> — Backed by tokenized Treasury bills, distributes yield.</p>
+<p><strong>syrupUSDC (Maple)</strong> — A yield-bearing stablecoin where your USDC earns interest from Maple's institutional lending pools.</p>
+<p><strong>sDAI/sUSDS (MakerDAO/Sky)</strong> — Savings rate version of DAI that earns yield from MakerDAO's RWA collateral.</p>
+<p>This is a fundamental shift. Instead of stablecoin issuers keeping all the yield, the value flows to holders. It also creates a direct link between stablecoins and tokenized Treasuries — the reserves backing these stablecoins ARE tokenized Treasuries.</p>
+<hr>
+<h3>Enterprise Adoption: Beyond Crypto</h3>
+<p>Stablecoins have broken out of the crypto bubble and into real business:</p>
+<p><strong>Visa</strong> — Piloting USDC for cross-border settlement. Expanded to select merchants in 2025 for settlement in minutes instead of days.</p>
+<p><strong>Stripe</strong> — Supporting USDC payouts since 2023. Acquired Bridge for $1.1 billion in 2024 to deepen stablecoin infrastructure. Businesses can accept digital dollars on Solana.</p>
+<p><strong>Revolut</strong> — Uses USDC and USDT for international supplier payments, saving businesses 1–3% in foreign exchange fees ($10,000–$30,000 on a $1 million transaction).</p>
+<p><strong>PayPal</strong> — Launched its own stablecoin (PYUSD) and integrated stablecoin payments.</p>
+<p><strong>JPMorgan</strong> — Operates JPM Coin (now Kinexys) for institutional settlements.</p>
+<p><strong>Corporate treasury</strong> — Multinational companies using stablecoins to move funds between global subsidiaries instantly, eliminating FX costs and settlement delays.</p>
+<hr>
+<h3>Risks: What Can Go Wrong</h3>
+<h3>De-pegging Risk</h3>
+<p>Stablecoins can lose their $1 peg. It happened to USDC in March 2023 when Silicon Valley Bank (which held some USDC reserves) collapsed. USDC briefly dropped to $0.87. It recovered, but the event showed that even regulated stablecoins carry banking system risk.</p>
+<h3>Custodial / Counterparty Risk</h3>
+<p>You're trusting the issuer to actually hold the reserves they claim. If Tether or Circle mismanages reserves, your tokens could lose value. Paxos mitigates this with NYDFS regulation. Tether's lack of a Big Four audit remains a concern.</p>
+<h3>Regulatory Risk</h3>
+<p>The EU's MiCA caps non-euro stablecoin transactions at €200 million daily. Different countries have different rules. A hostile regulatory move could restrict stablecoin use overnight.</p>
+<h3>Concentration Risk</h3>
+<p>USDT + USDC = 93% of the market. If either one fails, the entire crypto and RWA ecosystem faces systemic risk. This is the too-big-to-fail problem, but for crypto.</p>
+<h3>The "Real Usage" Question</h3>
+<p>Although stablecoins show $36+ trillion in annual transfer volume, research suggests 70–80% is bots, exchange internal transfers, and automated arbitrage. Real end-user volume is growing but still a fraction of headline numbers.</p>
+<h3>Dollar Dominance Risk</h3>
+<p>90%+ of stablecoins are pegged to the USD. This reinforces dollar hegemony in crypto — great for U.S. financial influence, concerning for countries trying to reduce dollar dependency. Non-USD stablecoins (Euro, etc.) have less than $500 million total market cap.</p>
+<hr>
+<h3>How Stablecoins Connect to Every Other RWA</h3>
+<p>Here's the mental model:</p>
+<p>```</p>
+<p>Traditional Finance                    On-Chain Finance</p>
+<p>─────────────────                    ──────────────────</p>
+<p>U.S. Dollar ($)          →           Stablecoins (USDC, USDT)</p>
+<p>Treasury Bills           →           Tokenized Treasuries (BUIDL, USDY)  </p>
+<p>Bank Loans               →           Tokenized Private Credit (Maple, Centrifuge)</p>
+<p>Gold Bars                →           Tokenized Gold (PAXG, XAUT)</p>
+<p>Property Deeds           →           Tokenized Real Estate (RealT)</p>
+<p>Stock Certificates       →           Tokenized Equities (xStocks)</p>
+<p>Settlement currency:     Settlement currency:</p>
+<p>    USD                      USDC/USDT</p>
+<p>```</p>
+<p>Stablecoins are the <strong>base layer</strong>. Everything else is built on top. The healthier and more regulated the stablecoin market becomes, the faster every other RWA category grows.</p>
+<hr>
+<h3>The Numbers That Matter</h3>
+<div class="compare-table-wrap"><table class="compare-table"><thead><tr><th>Metric</th><th>Value</th></tr></thead><tbody><tr><td>Total stablecoin market cap</td><td><strong>$250+ billion</strong> (2025)</td></tr><tr><td>Growth since 2019</td><td><strong>100x+</strong></td></tr><tr><td>USDT market cap</td><td>~$167 billion (60% share)</td></tr><tr><td>USDC market cap</td><td>~$67 billion (24% share)</td></tr><tr><td>Combined USDT + USDC share</td><td><strong>93%</strong></td></tr><tr><td>Annual on-chain volume (2025)</td><td><strong>$4+ trillion</strong> (first 8 months)</td></tr><tr><td>Tether's 2024 profit</td><td><strong>$13 billion</strong></td></tr><tr><td>Tether's U.S. Treasury holdings</td><td><strong>$100+ billion</strong></td></tr><tr><td>% pegged to USD</td><td><strong>90%+</strong></td></tr><tr><td>USDC growth rate (2025)</td><td><strong>40.9%</strong></td></tr><tr><td>Stablecoin share of crypto transaction volume</td><td><strong>30%</strong></td></tr></tbody></table></div>
+<hr>
+<h3>What Comes Next</h3>
+<p><strong>Yield-bearing stablecoins become the norm.</strong> Why hold USDC at 0% when you can hold syrupUSDC at 5%+? The market will shift toward stablecoins that pass Treasury/lending yield to holders.</p>
+<p><strong>Stablecoin payments go mainstream.</strong> Visa, Stripe, Revolut, and PayPal have all integrated stablecoins. Within 2–3 years, paying with stablecoins will feel as normal as paying with a credit card.</p>
+<p><strong>Non-USD stablecoins grow.</strong> Euro, yen, and other currency-pegged stablecoins will emerge as local regulations clarify — but dollar dominance will persist for years.</p>
+<p><strong>Central Bank Digital Currencies (CBDCs) compete.</strong> Governments are building their own digital currencies. China's digital yuan, the EU's digital euro — these will compete with stablecoins, especially for domestic payments. But CBDCs lack stablecoins' DeFi composability.</p>
+<p><strong>Stablecoin issuers become financial giants.</strong> Tether already earns more than most banks. Circle went public. These companies are becoming too important to ignore — and too big to fail.</p>
+<hr>
+<h3>The Bottom Line</h3>
+<p>Stablecoins are the most successful real-world asset tokenization story ever told. From under $2 billion in 2019 to $250+ billion in 2025, they've proven that putting dollars on a blockchain creates enormous value — faster settlement, lower fees, global access, and programmable money.</p>
+<p>But they're more than just tokenized dollars. They're the <strong>infrastructure that makes every other tokenized asset possible.</strong> Without stablecoins, there are no tokenized Treasuries. No on-chain lending. No tokenized real estate rent payments. No 24/7 gold trading.</p>
+<p>Every article in this series — Treasuries, Real Estate, Gold, Private Credit, Equities — depends on stablecoins working. They are the invisible foundation beneath the entire $35 billion RWA market.</p>
+<p>And they're just getting started.</p>
+<hr>
+<div class="callout"><div class="callout-title">Overview</div><p>This is part of my RWA research series. Read my other deep dives on Tokenized Treasuries, Tokenized Real Estate, Tokenized Gold, Tokenized Private Credit, and Tokenized Equities. Explore my live Dune Analytics dashboard tracking $23B+ in tokenized assets across 136 protocols.</p></div>
+<div class="callout"><div class="callout-title">Overview</div><p>Data sources: CoinGecko 2025 RWA Report, rwa.xyz, TRM Labs 2025 Stablecoin Report, S&P Global, PANews, Bastion Research, CoinDesk, RWA.io</p></div>
+
+    <h3>Risks to Consider</h3>
+    <div class="risk-row">
+      <div class="risk-pill"><span class="risk-dot med"></span><span class="risk-label">De-peg Risk</span><span class="risk-level med">MEDIUM</span></div>
+      <div class="risk-pill"><span class="risk-dot high"></span><span class="risk-label">Reserve Transparency</span><span class="risk-level high">HIGH</span></div>
+      <div class="risk-pill"><span class="risk-dot high"></span><span class="risk-label">Regulatory</span><span class="risk-level high">HIGH</span></div>
+      <div class="risk-pill"><span class="risk-dot med"></span><span class="risk-label">Concentration</span><span class="risk-level med">MEDIUM</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- LAYER 2: SEE IT -->
+<div class="section-divider"></div>
+<section class="section">
+  <div class="section-label">Live On-Chain Data</div>
+  <h2>See It Live</h2>
+  <p class="section-desc">Filtered data from Dune Analytics for this asset class.</p>
+  <div class="live-grid">
+    <div class="live-card">
+      <h3><span class="dot"></span> Protocol TVL</h3>
+      <canvas id="chart-tvl" height="240"></canvas>
+    </div>
+    <div class="live-card">
+      <h3><span class="dot" style="background:var(--accent-blue);"></span> Activity</h3>
+      <canvas id="chart-activity" height="240"></canvas>
+    </div>
+    <div class="live-card full">
+      <h3><span class="dot" style="background:var(--accent-yellow);"></span> Related Protocols</h3>
+      <table class="data-table" id="table-protocols">
+        <thead><tr><th>Protocol</th><th>TVL</th><th>Category</th><th>7d Change</th></tr></thead>
+        <tbody><tr><td colspan="4" style="text-align:center;padding:1.5rem;"><div class="kpi-loading"></div></td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- LAYER 3: EXPLORE -->
+<div class="section-divider"></div>
+<section class="section">
+  <div class="section-label">Go Deeper</div>
+  <h2>Explore</h2>
+  <p class="section-desc">Drill into the data with institutional-grade tools.</p>
+  <div class="explore-grid">
+    <a href="https://app.rwa.xyz/stablecoins" target="_blank" class="explore-card">
+      <div class="explore-icon">📊</div>
+      <div class="explore-title">rwa.xyz — Stablecoins</div>
+      <div class="explore-desc">Reserve breakdowns and market data.</div>
+      <div class="explore-link mono">Explore →</div>
+    </a>
+    <a href="https://tether.to/en/transparency" target="_blank" class="explore-card">
+      <div class="explore-icon">💵</div>
+      <div class="explore-title">Tether Transparency</div>
+      <div class="explore-desc">USDT reserve attestations.</div>
+      <div class="explore-link mono">Explore →</div>
+    </a>
+    <a href="https://dune.com/adu0x" target="_blank" class="explore-card">
+      <div class="explore-icon">🔮</div>
+      <div class="explore-title">Dune Dashboard</div>
+      <div class="explore-desc">Full RWA on-chain analytics.</div>
+      <div class="explore-link mono">Explore →</div>
+    </a>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+<div class="back-bar"><a href="index.html">← Back to Dashboard</a></div>
+
+<!-- DUNE API -->
+<script>
+const DUNE_API_KEY = 'YBDcEyiKz0mXLJJX4kOC6bBFcvN68UUi';
+const DUNE_BASE = 'https://api.dune.com/api/v1/query';
+Chart.defaults.color = '#8888a0';
+Chart.defaults.borderColor = '#1e1e2e';
+Chart.defaults.font.family = "'JetBrains Mono', monospace";
+Chart.defaults.font.size = 10;
+
+async function fetchDune(qid, limit=50) {
+  try {
+    const r = await fetch(DUNE_BASE+'/'+qid+'/results?limit='+limit, { headers:{'X-Dune-API-Key':DUNE_API_KEY} });
+    if (!r.ok) throw new Error('HTTP '+r.status);
+    const d = await r.json();
+    const rows = d.result?.rows || [];
+    if (rows.length) console.log('Q'+qid+' cols:', Object.keys(rows[0]), 'sample:', rows[0]);
+    return rows;
+  } catch(e) { console.error('Q'+qid+' fail:', e); return null; }
+}
+
+function fmt(n) {
+  if (n>=1e9) return '$'+(n/1e9).toFixed(1)+'B';
+  if (n>=1e6) return '$'+(n/1e6).toFixed(1)+'M';
+  if (n>=1e3) return '$'+(n/1e3).toFixed(0)+'K';
+  return '$'+n.toFixed(0);
+}
+
+// Load leaderboard filtered for this category
+async function init() {
+  const rows = await fetchDune(6676500, 50);
+  if (!rows) return;
+  
+  const keys = Object.keys(rows[0]);
+  const nameKey = keys.find(k => typeof rows[0][k] === 'string' && k.includes('name')) || keys[0];
+  const tvlKey = keys.find(k => typeof rows[0][k] === 'number' && (k.includes('tvl') || k.includes('TVL'))) || keys.find(k => typeof rows[0][k] === 'number');
+  const catKey = keys.find(k => k.includes('category') || k.includes('type')) || '';
+  const changeKey = keys.find(k => k.includes('7d') || k.includes('change')) || '';
+  
+  // Populate hero live KPIs
+    const usdtRow = rows.find(r => (r[nameKey]||'').toLowerCase().includes('tether'));
+    if (usdtRow) document.getElementById('lk-usdt').textContent = fmt(usdtRow[tvlKey]);
+    const usdcRow = rows.find(r => (r[nameKey]||'').toLowerCase().includes('usdc'));
+    if (usdcRow) document.getElementById('lk-usdc').textContent = fmt(usdcRow[tvlKey]);
+    const daiRow = rows.find(r => (r[nameKey]||'').toLowerCase().includes('makerdao'));
+    if (daiRow) document.getElementById('lk-dai').textContent = fmt(daiRow[tvlKey]);
+    const sdaiRow = rows.find(r => (r[nameKey]||'').toLowerCase().includes('spark'));
+    if (sdaiRow) document.getElementById('lk-sdai').textContent = fmt(sdaiRow[tvlKey]);
+
+  // Populate protocol table
+  const tbody = document.querySelector('#table-protocols tbody');
+  const display = rows.slice(0, 15);
+  tbody.innerHTML = display.map(r => {
+    const tvl = r[tvlKey]; const change = r[changeKey];
+    return '<tr><td><strong>'+(r[nameKey]||'—')+'</strong></td><td>'+(tvl?fmt(tvl):'—')+'</td><td>'+(r[catKey]||'—')+'</td><td class="'+(change>=0?'pos':'neg')+'">'+(change!=null?(change>=0?'+':'')+change.toFixed(1)+'%':'—')+'</td></tr>';
+  }).join('');
+
+  // Charts with top protocols by TVL
+  const sorted = [...rows].sort((a,b) => (b[tvlKey]||0) - (a[tvlKey]||0)).slice(0,8);
+  new Chart(document.getElementById('chart-tvl'), {
+    type:'bar', data:{ labels:sorted.map(r=>r[nameKey]), datasets:[{data:sorted.map(r=>r[tvlKey]),backgroundColor:'#1a73e8',borderRadius:4}] },
+    options:{ responsive:true, indexAxis:'y', plugins:{legend:{display:false}}, scales:{x:{ticks:{callback:v=>fmt(v)},grid:{color:'#1e1e2e'}},y:{grid:{display:false}}} }
+  });
+
+  // Activity chart - use change data
+  if (changeKey) {
+    const withChange = rows.filter(r => r[changeKey] != null).slice(0,8);
+    new Chart(document.getElementById('chart-activity'), {
+      type:'bar', data:{ labels:withChange.map(r=>r[nameKey]),
+        datasets:[{data:withChange.map(r=>r[changeKey]),backgroundColor:withChange.map(r=>r[changeKey]>=0?'#00ff88':'#ff4757'),borderRadius:4}] },
+      options:{ responsive:true, plugins:{legend:{display:false}}, scales:{y:{ticks:{callback:v=>v+'%'},grid:{color:'#1e1e2e'}},x:{grid:{display:false}}} }
+    });
+  }
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
