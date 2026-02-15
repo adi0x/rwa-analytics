@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RWA Analytics — The Trillion Dollar Opportunity</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Sora:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --bg-primary: #0a0a0f;
+    --bg-secondary: #12121a;
+    --bg-card: #16161f;
+    --bg-card-hover: #1c1c28;
+    --accent-green: #00ff88;
+    --accent-blue: #4d7cff;
+    --accent-purple: #a855f7;
+    --accent-orange: #ff6b35;
+    --accent-red: #ff4757;
+    --accent-yellow: #ffd700;
+    --text-primary: #e8e8ed;
+    --text-secondary: #8888a0;
+    --text-muted: #55556a;
+    --border: #1e1e2e;
+    --glow-green: rgba(0, 255, 136, 0.15);
+    --glow-blue: rgba(77, 124, 255, 0.15);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: 'Sora', sans-serif;
+    overflow-x: hidden;
+    line-height: 1.6;
+  }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg-primary); }
+  ::-webkit-scrollbar-thumb { background: var(--text-muted); border-radius: 3px; }
+
+  /* ========== NAV ========== */
+  .nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    padding: 0.75rem 2rem;
+    background: rgba(10, 10, 15, 0.85);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .nav-logo { font-weight: 700; font-size: 1rem; color: var(--text-primary); text-decoration: none; }
+  .nav-logo span { color: var(--accent-green); }
+  .nav-links { display: flex; gap: 2rem; }
+  .nav-links a {
+    color: var(--text-secondary); text-decoration: none; font-size: 0.8rem;
+    font-family: 'JetBrains Mono', monospace; letter-spacing: 0.5px;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--accent-green); }
+
+  /* ========== HERO ========== */
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    text-align: center; padding: 2rem; position: relative; overflow: hidden;
+  }
+  .hero::before {
+    content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+    background: radial-gradient(ellipse at 30% 50%, rgba(0,255,136,0.04) 0%, transparent 50%),
+                radial-gradient(ellipse at 70% 50%, rgba(77,124,255,0.04) 0%, transparent 50%);
+    animation: drift 20s ease-in-out infinite;
+  }
+  @keyframes drift { 0%,100%{transform:translate(0,0) rotate(0deg);} 50%{transform:translate(-2%,2%) rotate(1deg);} }
+  .hero-label {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;
+    letter-spacing: 4px; text-transform: uppercase; color: var(--accent-green);
+    margin-bottom: 2rem; opacity: 0; animation: fadeUp 0.8s ease forwards 0.2s;
+  }
+  .hero h1 {
+    font-size: clamp(2.5rem, 6vw, 5rem); font-weight: 800; line-height: 1.1;
+    margin-bottom: 1.5rem; opacity: 0; animation: fadeUp 0.8s ease forwards 0.4s;
+  }
+  .hero h1 .highlight {
+    background: linear-gradient(135deg, var(--accent-green), var(--accent-blue));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  }
+  .hero-stat-row {
+    display: flex; gap: 3rem; margin-top: 2rem;
+    opacity: 0; animation: fadeUp 0.8s ease forwards 0.6s;
+  }
+  .hero-stat { text-align: center; }
+  .hero-stat .value { font-family: 'JetBrains Mono', monospace; font-size: 2.5rem; font-weight: 700; color: var(--accent-green); }
+  .hero-stat .label { font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem; }
+  .hero-divider { width: 1px; height: 60px; background: var(--border); align-self: center; }
+  .hero-sub {
+    font-size: 1.1rem; color: var(--text-secondary); max-width: 600px;
+    margin-top: 2rem; opacity: 0; animation: fadeUp 0.8s ease forwards 0.8s;
+  }
+  .penetration-bar { width: 100%; max-width: 500px; margin-top: 3rem; opacity: 0; animation: fadeUp 0.8s ease forwards 1s; }
+  .penetration-bar .bar-label { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.5rem; }
+  .penetration-bar .bar-track { height: 8px; background: var(--bg-card); border-radius: 4px; overflow: hidden; position: relative; }
+  .penetration-bar .bar-fill {
+    height: 100%; width: 0; background: linear-gradient(90deg, var(--accent-green), var(--accent-blue));
+    border-radius: 4px; animation: fillBar 2s ease forwards 1.5s; position: relative;
+  }
+  .penetration-bar .bar-fill::after {
+    content: '0.004%'; position: absolute; right: -40px; top: -24px;
+    font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--accent-green);
+  }
+  @keyframes fillBar { to { width: 2%; } }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(20px);} to{opacity:1;transform:translateY(0);} }
+  .scroll-indicator {
+    position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%);
+    display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+    opacity: 0; animation: fadeUp 0.8s ease forwards 1.5s;
+  }
+  .scroll-indicator span { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--text-muted); letter-spacing: 2px; text-transform: uppercase; }
+  .scroll-arrow { width: 20px; height: 20px; border-right: 1.5px solid var(--text-muted); border-bottom: 1.5px solid var(--text-muted); transform: rotate(45deg); animation: bounce 2s infinite; }
+  @keyframes bounce { 0%,100%{transform:rotate(45deg) translateY(0);} 50%{transform:rotate(45deg) translateY(5px);} }
+
+  /* ========== SECTIONS ========== */
+  .section { padding: 6rem 2rem; max-width: 1200px; margin: 0 auto; }
+  .section-label {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.7rem;
+    letter-spacing: 3px; text-transform: uppercase; color: var(--accent-green);
+    margin-bottom: 1rem; display: flex; align-items: center; gap: 0.75rem;
+  }
+  .section-label::before { content: ''; width: 20px; height: 1px; background: var(--accent-green); }
+  .section h2 { font-size: clamp(1.8rem, 3.5vw, 2.8rem); font-weight: 700; margin-bottom: 1rem; line-height: 1.2; }
+  .section-desc { color: var(--text-secondary); font-size: 1rem; max-width: 650px; margin-bottom: 3rem; }
+  .section-divider { width: 100%; max-width: 1200px; margin: 0 auto; height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); }
+
+  /* ========== COMPARISON GRID ========== */
+  .comparison-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--border); border-radius: 12px; overflow: hidden; margin-top: 2rem; }
+  .comparison-header { padding: 1.5rem 2rem; font-weight: 600; font-size: 1rem; text-align: center; }
+  .comparison-header.tradfi { background: linear-gradient(135deg, #1a1520, #16161f); color: var(--text-secondary); }
+  .comparison-header.defi { background: linear-gradient(135deg, #0a1a15, #16161f); color: var(--accent-green); }
+  .comparison-cell { padding: 1.25rem 2rem; background: var(--bg-card); display: flex; flex-direction: column; gap: 0.25rem; }
+  .comparison-cell .metric-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+  .comparison-cell .metric-value { font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; font-weight: 500; }
+  .comparison-cell.tradfi .metric-value { color: var(--accent-red); }
+  .comparison-cell.defi .metric-value { color: var(--accent-green); }
+  .comparison-cell .metric-detail { font-size: 0.75rem; color: var(--text-secondary); }
+
+  /* ========== LIVE DATA ========== */
+  .kpi-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin-bottom: 2rem; }
+  .kpi-card {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 1.5rem; text-align: center; position: relative; overflow: hidden;
+    transition: all 0.3s ease;
+  }
+  .kpi-card:hover { border-color: var(--accent-green); transform: translateY(-2px); }
+  .kpi-card .kpi-value {
+    font-family: 'JetBrains Mono', monospace; font-size: 1.8rem; font-weight: 700;
+    color: var(--accent-green); min-height: 2.5rem; display: flex; align-items: center; justify-content: center;
+  }
+  .kpi-card .kpi-label { font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.5rem; }
+  .kpi-card .kpi-loading {
+    width: 20px; height: 20px; border: 2px solid var(--border); border-top-color: var(--accent-green);
+    border-radius: 50%; animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .chart-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+  .chart-card {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+    padding: 1.5rem; position: relative;
+  }
+  .chart-card h3 {
+    font-size: 0.9rem; font-weight: 600; margin-bottom: 1rem;
+    display: flex; align-items: center; gap: 0.5rem;
+  }
+  .chart-card h3 .chart-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-green); }
+  .chart-card canvas { width: 100% !important; }
+  .chart-card.full-width { grid-column: 1 / -1; }
+
+  /* Data tables */
+  .data-table-wrap {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px;
+    overflow: hidden; margin-bottom: 1.5rem;
+  }
+  .data-table-wrap h3 {
+    font-size: 0.9rem; font-weight: 600; padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 0.5rem;
+  }
+  .data-table-wrap h3 .chart-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-green); }
+  .data-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  .data-table th {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--accent-green); padding: 0.75rem 1rem;
+    text-align: left; background: rgba(0,255,136,0.03); border-bottom: 1px solid var(--border);
+  }
+  .data-table td { padding: 0.65rem 1rem; color: var(--text-secondary); border-bottom: 1px solid rgba(30,30,46,0.4); }
+  .data-table tr:hover td { background: rgba(255,255,255,0.02); }
+  .data-table .positive { color: var(--accent-green); }
+  .data-table .negative { color: var(--accent-red); }
+
+  /* ========== ARTICLE CARDS ========== */
+  .article-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem; margin-top: 2rem; }
+  .article-card {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px;
+    padding: 2rem; text-decoration: none; color: inherit; position: relative;
+    overflow: hidden; transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex; flex-direction: column; gap: 0.75rem;
+  }
+  .article-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: var(--card-accent); opacity: 0; transition: opacity 0.3s ease;
+  }
+  .article-card:hover {
+    background: var(--bg-card-hover); border-color: var(--card-accent);
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.4), 0 0 30px color-mix(in srgb, var(--card-accent) 10%, transparent);
+  }
+  .article-card:hover::before { opacity: 1; }
+  .article-card .article-number { font-size: 0.65rem; color: var(--card-accent); letter-spacing: 2px; opacity: 0.6; }
+  .article-card .article-icon { font-size: 1.8rem; margin: 0.25rem 0; }
+  .article-card h3 { font-size: 1.15rem; font-weight: 700; color: var(--text-primary); line-height: 1.3; }
+  .article-card .article-excerpt { font-size: 0.82rem; color: var(--text-secondary); line-height: 1.6; flex-grow: 1; }
+  .article-card .article-meta {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border);
+  }
+  .article-tag {
+    font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; padding: 0.3rem 0.6rem;
+    background: color-mix(in srgb, var(--card-accent) 12%, transparent);
+    border: 1px solid color-mix(in srgb, var(--card-accent) 25%, transparent);
+    border-radius: 4px; color: var(--card-accent); letter-spacing: 1px; text-transform: uppercase;
+  }
+  .article-read { font-size: 0.75rem; color: var(--card-accent); transition: transform 0.2s ease; }
+  .article-card:hover .article-read { transform: translateX(4px); }
+  .article-card.coming-soon { opacity: 0.5; pointer-events: none; }
+  .article-card.coming-soon h3 { color: var(--text-secondary); }
+
+  /* ========== GROWTH CHART ========== */
+  .growth-container { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; margin-top: 2rem; }
+  .chart-placeholder { width: 100%; height: 300px; position: relative; margin-top: 1.5rem; }
+  .chart-svg { width: 100%; height: 100%; }
+  .chart-area { fill: url(#greenGradient); opacity: 0.3; }
+  .chart-line { fill: none; stroke: var(--accent-green); stroke-width: 2.5; stroke-linecap: round; stroke-dasharray: 1000; stroke-dashoffset: 1000; animation: drawLine 3s ease forwards 0.5s; }
+  @keyframes drawLine { to { stroke-dashoffset: 0; } }
+  .chart-labels { display: flex; justify-content: space-between; margin-top: 0.5rem; font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-muted); }
+  .chart-y-labels { position: absolute; left: 0; top: 0; height: 100%; display: flex; flex-direction: column; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; color: var(--text-muted); padding: 0.5rem 0; }
+  .chart-grid-line { stroke: var(--border); stroke-width: 0.5; stroke-dasharray: 4, 4; }
+
+  /* ========== TIMELINE ========== */
+  .timeline { margin-top: 3rem; position: relative; padding-left: 2rem; }
+  .timeline::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: linear-gradient(to bottom, var(--accent-green), var(--accent-blue), var(--accent-purple)); }
+  .timeline-item { position: relative; padding: 1.25rem 0 1.25rem 1.5rem; }
+  .timeline-item::before { content: ''; position: absolute; left: -2rem; top: 1.5rem; width: 10px; height: 10px; border-radius: 50%; background: var(--accent-green); border: 2px solid var(--bg-primary); transform: translateX(-3px); }
+  .timeline-item .t-year { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--accent-green); margin-bottom: 0.25rem; }
+  .timeline-item .t-title { font-weight: 600; font-size: 1rem; margin-bottom: 0.25rem; }
+  .timeline-item .t-desc { font-size: 0.8rem; color: var(--text-secondary); }
+
+  /* ========== RISKS ========== */
+  .risk-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-top: 2rem; }
+  .risk-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; }
+  .risk-card .risk-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+  .risk-card .risk-name { font-weight: 600; font-size: 0.95rem; }
+  .risk-level { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; padding: 0.25rem 0.5rem; border-radius: 4px; }
+  .risk-level.high { background: rgba(255,71,87,0.15); color: var(--accent-red); }
+  .risk-level.medium { background: rgba(255,215,0,0.15); color: var(--accent-yellow); }
+  .risk-bar-track { height: 4px; background: var(--bg-primary); border-radius: 2px; margin-top: 0.75rem; overflow: hidden; }
+  .risk-bar-fill { height: 100%; border-radius: 2px; }
+  .risk-bar-fill.high { width: 85%; background: var(--accent-red); }
+  .risk-bar-fill.medium { width: 55%; background: var(--accent-yellow); }
+  .risk-card .risk-desc { font-size: 0.78rem; color: var(--text-secondary); margin-top: 0.75rem; line-height: 1.5; }
+
+  /* ========== OPPORTUNITY ========== */
+  .opportunity-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 2rem; }
+  .opp-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 2rem; text-align: center; transition: all 0.3s ease; }
+  .opp-card:hover { border-color: var(--accent-green); box-shadow: 0 0 40px var(--glow-green); }
+  .opp-card .opp-value { font-family: 'JetBrains Mono', monospace; font-size: 2.2rem; font-weight: 700; margin-bottom: 0.5rem; }
+  .opp-card .opp-label { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 0.75rem; }
+  .opp-card .opp-sub { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-muted); }
+  .opp-card:nth-child(1) .opp-value { color: var(--accent-green); }
+  .opp-card:nth-child(2) .opp-value { color: var(--accent-blue); }
+  .opp-card:nth-child(3) .opp-value { color: var(--accent-purple); }
+
+  .tam-visual { display: flex; align-items: flex-end; justify-content: center; gap: 2rem; margin-top: 3rem; padding: 2rem; height: 350px; }
+  .tam-bar-container { display: flex; flex-direction: column; align-items: center; gap: 0.75rem; }
+  .tam-bar { width: 80px; border-radius: 8px 8px 0 0; position: relative; display: flex; align-items: flex-start; justify-content: center; padding-top: 1rem; }
+  .tam-bar .tam-value { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; font-weight: 700; color: white; }
+  .tam-bar-label { font-size: 0.75rem; color: var(--text-secondary); text-align: center; max-width: 90px; }
+
+  /* ========== FOOTER ========== */
+  .footer { text-align: center; padding: 4rem 2rem; border-top: 1px solid var(--border); }
+  .footer h2 { font-size: clamp(1.5rem, 3vw, 2.5rem); font-weight: 700; margin-bottom: 1rem; }
+  .footer p { color: var(--text-secondary); max-width: 500px; margin: 0 auto; }
+  .footer .cta-stat { font-family: 'JetBrains Mono', monospace; font-size: 3rem; font-weight: 700; color: var(--accent-green); margin: 2rem 0 0.5rem; }
+
+  /* ========== RESPONSIVE ========== */
+  @media (max-width: 768px) {
+    .hero-stat-row { flex-direction: column; gap: 1.5rem; }
+    .hero-divider { width: 60px; height: 1px; }
+    .comparison-grid { grid-template-columns: 1fr; }
+    .kpi-row { grid-template-columns: repeat(2, 1fr); }
+    .chart-row { grid-template-columns: 1fr; }
+    .opportunity-grid { grid-template-columns: 1fr; }
+    .tam-visual { flex-wrap: wrap; height: auto; }
+    .section { padding: 4rem 1.25rem; }
+    .nav-links { display: none; }
+  }
+
+  body::after {
+    content: ''; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none; z-index: 9999;
+  }
+
+  /* Error state */
+  .api-error { color: var(--accent-red); font-size: 0.7rem; font-family: 'JetBrains Mono', monospace; margin-top: 0.25rem; }
+  .data-stale { font-size: 0.6rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; margin-top: 0.25rem; }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="index.html" class="nav-logo"><span>RWA</span> Analytics</a>
+  <div class="nav-links">
+    <a href="#research">Research</a>
+    <a href="#live-data">Live Data</a>
+    <a href="#growth">Growth</a>
+    <a href="#opportunity">Opportunity</a>
+  </div>
+</nav>
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <div class="hero-label">Real World Assets Analytics</div>
+  <h1>
+    The World's Assets Are Worth<br>
+    <span class="highlight">$560 Trillion.</span><br>
+    Only 0.004% Is Tokenized.
+  </h1>
+  <div class="hero-stat-row">
+    <div class="hero-stat">
+      <div class="value mono">$560T+</div>
+      <div class="label">Global Asset Market</div>
+    </div>
+    <div class="hero-divider"></div>
+    <div class="hero-stat">
+      <div class="value mono">~$25B</div>
+      <div class="label">Currently Tokenized</div>
+    </div>
+    <div class="hero-divider"></div>
+    <div class="hero-stat">
+      <div class="value mono">0.004%</div>
+      <div class="label">Penetration Rate</div>
+    </div>
+  </div>
+  <p class="hero-sub">
+    Tracking the trillion-dollar migration on-chain.
+  </p>
+  <div class="penetration-bar">
+    <div class="bar-label"><span>Tokenized RWAs</span><span>Total Global Assets</span></div>
+    <div class="bar-track"><div class="bar-fill"></div></div>
+  </div>
+  <div class="scroll-indicator"><span>Scroll to explore</span><div class="scroll-arrow"></div></div>
+</section>
+
+<!-- ============ RESEARCH — DEEP DIVES ============ -->
+<div class="section-divider"></div>
+<section class="section" id="research">
+  <div class="section-label">Research — Deep Dives</div>
+  <h2>Learn Every Asset Class</h2>
+  <p class="section-desc">From absolute basics to advanced DeFi strategies. Each article covers how the asset works, real platforms, yield comparisons, risks, and how to get started.</p>
+  <div class="article-grid">
+    <a href="tokenized-treasuries.html" class="article-card" style="--card-accent: #00ff88;">
+      <div class="article-number mono">01</div>
+      <div class="article-icon">🏛️</div>
+      <h3>Tokenized Treasuries</h3>
+      <p class="article-excerpt">How BUIDL, USDY, and USYC put U.S. government bonds on-chain. $7.4B market, 640% YoY growth.</p>
+      <div class="article-meta"><span class="article-tag">Treasuries</span><span class="article-read mono">Read →</span></div>
+    </a>
+    <a href="tokenized-real-estate.html" class="article-card" style="--card-accent: #a855f7;">
+      <div class="article-number mono">02</div>
+      <div class="article-icon">🏠</div>
+      <h3>Tokenized Real Estate</h3>
+      <p class="article-excerpt">Buy $50 of a rental property, earn rent in DAI. RealT, Reantal, Lofty — $330T market at 0.006% penetration.</p>
+      <div class="article-meta"><span class="article-tag">Real Estate</span><span class="article-read mono">Read →</span></div>
+    </a>
+    <a href="tokenized-gold.html" class="article-card" style="--card-accent: #ffd700;">
+      <div class="article-number mono">03</div>
+      <div class="article-icon">🥇</div>
+      <h3>Tokenized Gold</h3>
+      <p class="article-excerpt">1 token = 1 oz physical gold in a vault. XAUT ($3.5B), PAXG ($2.3B) — 177% growth in 2025.</p>
+      <div class="article-meta"><span class="article-tag">Gold</span><span class="article-read mono">Read →</span></div>
+    </a>
+    <a href="tokenized-private-credit.html" class="article-card" style="--card-accent: #4d7cff;">
+      <div class="article-number mono">04</div>
+      <div class="article-icon">💳</div>
+      <h3>Tokenized Private Credit</h3>
+      <p class="article-excerpt">The $1.7T shadow lending market meets blockchain. Maple ($12B originated), Centrifuge, Figure — 8-12% yields.</p>
+      <div class="article-meta"><span class="article-tag">Private Credit</span><span class="article-read mono">Read →</span></div>
+    </a>
+    <a href="stablecoins-as-rwa.html" class="article-card" style="--card-accent: #1a73e8;">
+      <div class="article-number mono">05</div>
+      <div class="article-icon">💵</div>
+      <h3>Stablecoins as RWA</h3>
+      <p class="article-excerpt">The $250B infrastructure layer nobody recognizes as an RWA. USDT, USDC reserves, GENIUS Act, yield-bearing stables.</p>
+      <div class="article-meta"><span class="article-tag">Stablecoins</span><span class="article-read mono">Read →</span></div>
+    </a>
+    <div class="article-card coming-soon" style="--card-accent: #ff6b35;">
+      <div class="article-number mono">06</div>
+      <div class="article-icon">📈</div>
+      <h3>Tokenized Equities</h3>
+      <p class="article-excerpt">Buy Tesla stock 24/7 for $1 on Solana. 60+ tokenized stocks, Backed vs Ondo, Robinhood's 943 on Arbitrum.</p>
+      <div class="article-meta"><span class="article-tag">Coming Soon</span><span class="article-read mono" style="opacity:0.4;">Soon →</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ LIVE DATA — DUNE API ============ -->
+<div class="section-divider"></div>
+<section class="section" id="live-data">
+  <div class="section-label">Live Data — Powered by Dune Analytics</div>
+  <h2>Real-Time On-Chain Intelligence</h2>
+  <p class="section-desc">All data pulled live from Dune Analytics via API. Tracking $23B+ across 136 protocols on 64 chains.</p>
+
+  <!-- KPI Counters -->
+  <div class="kpi-row">
+    <div class="kpi-card" id="kpi-tvl">
+      <div class="kpi-value"><div class="kpi-loading"></div></div>
+      <div class="kpi-label">Total RWA TVL<br><span class="data-stale">via DefiLlama</span></div>
+    </div>
+    <div class="kpi-card" id="kpi-protocols">
+      <div class="kpi-value"><div class="kpi-loading"></div></div>
+      <div class="kpi-label">Total Protocols</div>
+    </div>
+    <div class="kpi-card" id="kpi-whale-vol">
+      <div class="kpi-value"><div class="kpi-loading"></div></div>
+      <div class="kpi-label">Recent Whale Volume<br><span class="data-stale">tracked tokens</span></div>
+    </div>
+    <div class="kpi-card" id="kpi-largest">
+      <div class="kpi-value"><div class="kpi-loading"></div></div>
+      <div class="kpi-label">Largest Recent Transfer</div>
+    </div>
+    <div class="kpi-card" id="kpi-chains">
+      <div class="kpi-value"><div class="kpi-loading"></div></div>
+      <div class="kpi-label">Active Chains</div>
+    </div>
+  </div>
+
+  <!-- Charts Row 1: Category + Chain -->
+  <div class="chart-row">
+    <div class="chart-card">
+      <h3><span class="chart-dot"></span>Category Breakdown</h3>
+      <canvas id="chart-category" height="280"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3><span class="chart-dot"></span>Chain Distribution (Estimated)</h3>
+      <canvas id="chart-chain" height="280"></canvas>
+    </div>
+  </div>
+
+  <!-- Charts Row 2: Growth + Decline -->
+  <div class="chart-row">
+    <div class="chart-card">
+      <h3><span class="chart-dot" style="background: var(--accent-green);"></span>Fastest Growing (7d)</h3>
+      <canvas id="chart-growing" height="280"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3><span class="chart-dot" style="background: var(--accent-red);"></span>Fastest Declining (7d)</h3>
+      <canvas id="chart-declining" height="280"></canvas>
+    </div>
+  </div>
+
+  <!-- Charts Row 3: Net Flow + Market Caps -->
+  <div class="chart-row">
+    <div class="chart-card">
+      <h3><span class="chart-dot" style="background: var(--accent-blue);"></span>Institutional Net Flow (Recent 100 Txns)</h3>
+      <canvas id="chart-netflow" height="280"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3><span class="chart-dot" style="background: var(--accent-purple);"></span>RWA Token Prices</h3>
+      <canvas id="chart-mcap" height="280"></canvas>
+    </div>
+  </div>
+
+  <!-- Protocol Leaderboard -->
+  <div class="data-table-wrap">
+    <h3><span class="chart-dot"></span>Protocol Leaderboard — Top 25</h3>
+    <div style="overflow-x:auto;">
+      <table class="data-table" id="table-leaderboard">
+        <thead><tr><th>Protocol</th><th>TVL</th><th>Category</th><th>1d %</th><th>7d %</th><th>Chains</th></tr></thead>
+        <tbody><tr><td colspan="6" style="text-align:center;padding:2rem;"><div class="kpi-loading" style="margin:0 auto;"></div></td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Tables Row: Treasury + Concentration -->
+  <div class="chart-row">
+    <div class="data-table-wrap">
+      <h3><span class="chart-dot" style="background:var(--accent-blue);"></span>Treasury Protocol Comparison (Recent 100 Txns per Token)</h3>
+      <div style="overflow-x:auto;">
+        <table class="data-table" id="table-treasury">
+          <thead><tr><th>Token</th><th>Minted</th><th>Burned</th><th>Net Flow</th><th>Txns</th></tr></thead>
+          <tbody><tr><td colspan="5" style="text-align:center;padding:2rem;"><div class="kpi-loading" style="margin:0 auto;"></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="data-table-wrap">
+      <h3><span class="chart-dot" style="background:var(--accent-orange);"></span>Concentration Risk</h3>
+      <div style="overflow-x:auto;">
+        <table class="data-table" id="table-concentration">
+          <thead><tr><th>Token</th><th>Transfers</th><th>Senders</th><th>Receivers</th><th>Est. Wallets</th></tr></thead>
+          <tbody><tr><td colspan="5" style="text-align:center;padding:2rem;"><div class="kpi-loading" style="margin:0 auto;"></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tables Row: Whale + Yield + Governance -->
+  <div class="data-table-wrap">
+    <h3><span class="chart-dot" style="background:var(--accent-yellow);"></span>Recent Whale Transfers (&gt;$1M)</h3>
+    <div style="overflow-x:auto;">
+      <table class="data-table" id="table-whale">
+        <thead><tr><th>Token</th><th>Type</th><th>Value</th><th>From</th><th>To</th></tr></thead>
+        <tbody><tr><td colspan="5" style="text-align:center;padding:2rem;"><div class="kpi-loading" style="margin:0 auto;"></div></td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="chart-row">
+    <div class="data-table-wrap">
+      <h3><span class="chart-dot" style="background:var(--accent-green);"></span>Yield Token Comparison</h3>
+      <div style="overflow-x:auto;">
+        <table class="data-table" id="table-yield">
+          <thead><tr><th>Token</th><th>Name</th><th>Price</th><th>Market Cap</th><th>7d %</th></tr></thead>
+          <tbody><tr><td colspan="5" style="text-align:center;padding:2rem;"><div class="kpi-loading" style="margin:0 auto;"></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="data-table-wrap">
+      <h3><span class="chart-dot" style="background:var(--accent-purple);"></span>Governance Token Tracker</h3>
+      <div style="overflow-x:auto;">
+        <table class="data-table" id="table-governance">
+          <thead><tr><th>Token</th><th>Price</th><th>Market Cap</th><th>24h %</th><th>7d %</th></tr></thead>
+          <tbody><tr><td colspan="5" style="text-align:center;padding:2rem;"><div class="kpi-loading" style="margin:0 auto;"></div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <p style="text-align:center; margin-top:2rem;">
+    <a href="https://dune.com/adu0x" target="_blank" style="color:var(--accent-green); font-family:'JetBrains Mono',monospace; font-size:0.8rem; text-decoration:none;">
+      View Full Dashboard on Dune →
+    </a>
+  </p>
+</section>
+
+<!-- ============ ACT 3 — GROWTH ============ -->
+<div class="section-divider"></div>
+<section class="section" id="growth">
+  <div class="section-label">Growth + Smart Money</div>
+  <h2>A Hockey Stick in the Making</h2>
+  <p class="section-desc">RWA TVL grew from ~$1B in 2022 to $25B+ in 2025. And the biggest players in finance are just getting started.</p>
+  <div class="growth-container">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;">
+      <div>
+        <div style="font-size:0.75rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;" class="mono">Total RWA TVL</div>
+        <div style="font-size:2rem;font-weight:700;margin-top:0.25rem;" class="mono">$25.4B</div>
+      </div>
+      <div style="text-align:right;"><span class="mono" style="color:var(--accent-green);font-size:0.9rem;">+2,440% since 2022</span></div>
+    </div>
+    <div class="chart-placeholder">
+      <div class="chart-y-labels"><span>$25B</span><span>$20B</span><span>$15B</span><span>$10B</span><span>$5B</span><span>$0</span></div>
+      <svg class="chart-svg" viewBox="0 0 800 280" preserveAspectRatio="none">
+        <defs><linearGradient id="greenGradient" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="var(--accent-green)" stop-opacity="0.3"/><stop offset="100%" stop-color="var(--accent-green)" stop-opacity="0.01"/></linearGradient></defs>
+        <line x1="40" y1="56" x2="790" y2="56" class="chart-grid-line"/><line x1="40" y1="112" x2="790" y2="112" class="chart-grid-line"/>
+        <line x1="40" y1="168" x2="790" y2="168" class="chart-grid-line"/><line x1="40" y1="224" x2="790" y2="224" class="chart-grid-line"/>
+        <path class="chart-area" d="M40,270 L40,265 L140,262 L240,258 L340,250 L390,240 L440,220 L490,195 L540,160 L590,130 L640,100 L690,70 L740,45 L790,20 L790,270 Z"/>
+        <path class="chart-line" d="M40,265 L140,262 L240,258 L340,250 L390,240 L440,220 L490,195 L540,160 L590,130 L640,100 L690,70 L740,45 L790,20"/>
+        <circle cx="40" cy="265" r="3" fill="var(--accent-green)"/><circle cx="340" cy="250" r="3" fill="var(--accent-green)"/>
+        <circle cx="540" cy="160" r="3" fill="var(--accent-green)"/>
+        <circle cx="790" cy="20" r="5" fill="var(--accent-green)"><animate attributeName="r" values="5;7;5" dur="2s" repeatCount="indefinite"/></circle>
+      </svg>
+    </div>
+    <div class="chart-labels"><span>2019</span><span>2020</span><span>2021</span><span>2022</span><span>2023</span><span>2024</span><span>2025</span></div>
+  </div>
+  <h3 style="margin-top:3rem;font-size:1.2rem;margin-bottom:0.5rem;">When Smart Money Entered</h3>
+  <p style="color:var(--text-secondary);font-size:0.85rem;margin-bottom:1rem;">The biggest names in finance are building on-chain.</p>
+  <div class="timeline">
+    <div class="timeline-item"><div class="t-year">2021</div><div class="t-title">JPMorgan launches Onyx</div><div class="t-desc">Blockchain-based payments and repo transactions for institutional clients.</div></div>
+    <div class="timeline-item"><div class="t-year">2023</div><div class="t-title">BlackRock files for Bitcoin ETF</div><div class="t-desc">Signals institutional crypto legitimacy. BUIDL tokenized fund follows.</div></div>
+    <div class="timeline-item"><div class="t-year">2024</div><div class="t-title">BlackRock launches BUIDL</div><div class="t-desc">Tokenized money market fund on Ethereum via Securitize. Crosses $500M in weeks.</div></div>
+    <div class="timeline-item"><div class="t-year">2024</div><div class="t-title">Franklin Templeton expands BENJI</div><div class="t-desc">On-chain US Government Money Fund available on multiple chains.</div></div>
+    <div class="timeline-item"><div class="t-year">2025</div><div class="t-title">Ondo USDY crosses $1B+</div><div class="t-desc">Tokenized treasury yields accessible globally. Multi-chain deployment.</div></div>
+    <div class="timeline-item"><div class="t-year">2025</div><div class="t-title">Goldman Sachs, HSBC, Citi exploring tokenization</div><div class="t-desc">Multiple tier-1 banks piloting tokenized bonds and settlements.</div></div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<div class="section-divider"></div>
+<section class="section" id="opportunity">
+  <div class="section-label">The Opportunity</div>
+  <h2>What If Just 1% Gets Tokenized?</h2>
+  <p class="section-desc">The total addressable market dwarfs current adoption.</p>
+  <div class="opportunity-grid">
+    <div class="opp-card"><div class="opp-value">$130T</div><div class="opp-label">Global Bond Market</div><div class="opp-sub">1% = $1.3 Trillion tokenized</div></div>
+    <div class="opp-card"><div class="opp-value">$330T</div><div class="opp-label">Global Real Estate</div><div class="opp-sub">1% = $3.3 Trillion tokenized</div></div>
+    <div class="opp-card"><div class="opp-value">$100T</div><div class="opp-label">Global Equities</div><div class="opp-sub">1% = $1 Trillion tokenized</div></div>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+<section class="footer">
+  <div class="section-label" style="justify-content:center;">The Bottom Line</div>
+  <h2>The Question Isn't <em>If</em>.<br>It's <em>How Fast</em>.</h2>
+  <p>When BlackRock, JPMorgan, and Goldman Sachs are all building in the same direction, the signal is clear.</p>
+  <div class="cta-stat">$5.6T</div>
+  <p class="mono" style="font-size:0.8rem;color:var(--text-secondary);">Projected tokenized assets by 2030 (1% penetration)</p>
+</section>
+
+<!-- ============ DUNE API SCRIPT ============ -->
+<script>
+const DUNE_API_KEY = 'YBDcEyiKz0mXLJJX4kOC6bBFcvN68UUi';
+const DUNE_BASE = 'https://api.dune.com/api/v1/query';
+
+const QUERIES = {
+  tvl: 6676203,
+  protocols: 6676216,
+  whaleVol: 6690510,
+  largestTransfer: 6690515,
+  chainCount: 6691371,
+  categoryBreakdown: 6676220,
+  chainDistribution: 6676232,
+  leaderboard: 6676500,
+  growing: 6676504,
+  netFlow: 6676374,
+  whaleTransfers: 6676344,
+  yieldTokens: 6676507,
+  governance: 6676516,
+  marketCaps: 6676430,
+  categoryGrowth: 6691376,
+  treasury: 6691539,
+  concentration: 6691547,
+  declining: 6691552,
+};
+
+// Chart.js global config
+Chart.defaults.color = '#8888a0';
+Chart.defaults.borderColor = '#1e1e2e';
+Chart.defaults.font.family = "'JetBrains Mono', monospace";
+Chart.defaults.font.size = 10;
+
+async function fetchDune(queryId, limit = 100) {
+  try {
+    const res = await fetch(`${DUNE_BASE}/${queryId}/results?limit=${limit}`, {
+      headers: { 'X-Dune-API-Key': DUNE_API_KEY }
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const rows = data.result?.rows || [];
+    if (rows.length > 0) {
+      console.log(`Query ${queryId} columns:`, Object.keys(rows[0]));
+      console.log(`Query ${queryId} sample:`, rows[0]);
+    } else {
+      console.warn(`Query ${queryId}: no rows returned`);
+    }
+    return rows;
+  } catch (err) {
+    console.error(`Dune query ${queryId} failed:`, err);
+    return null;
+  }
+}
+
+function formatNum(n) {
+  if (n >= 1e9) return '$' + (n / 1e9).toFixed(1) + 'B';
+  if (n >= 1e6) return '$' + (n / 1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return '$' + (n / 1e3).toFixed(0) + 'K';
+  return '$' + n.toFixed(0);
+}
+
+function shortAddr(addr) {
+  if (!addr || addr.length < 10) return addr || '—';
+  return addr.slice(0, 6) + '...' + addr.slice(-4);
+}
+
+function setKPI(id, value, sub) {
+  const el = document.querySelector(`#${id} .kpi-value`);
+  if (value === null) {
+    el.innerHTML = '<span class="api-error">API Error</span>';
+    return;
+  }
+  el.textContent = value;
+  if (sub) {
+    const subEl = document.createElement('div');
+    subEl.className = 'data-stale';
+    subEl.textContent = sub;
+    document.getElementById(id).appendChild(subEl);
+  }
+}
+
+// ===== KPIs =====
+async function loadKPIs() {
+  const [tvl, protocols, whale, largest, chains] = await Promise.all([
+    fetchDune(QUERIES.tvl, 1),
+    fetchDune(QUERIES.protocols, 1),
+    fetchDune(QUERIES.whaleVol, 1),
+    fetchDune(QUERIES.largestTransfer, 1),
+    fetchDune(QUERIES.chainCount, 1),
+  ]);
+
+  if (tvl) {
+    const row = tvl[0];
+    const val = row?.total_tvl || row?.estimated_tvl || row?.[Object.keys(row)[0]];
+    setKPI('kpi-tvl', val ? formatNum(val) : Object.values(row)[0]);
+  } else setKPI('kpi-tvl', null);
+
+  if (protocols) {
+    const row = protocols[0];
+    const val = row?.total_protocols || row?.protocol_count || row?.[Object.keys(row)[0]];
+    setKPI('kpi-protocols', val != null ? val.toLocaleString() : Object.values(row)[0]);
+  } else setKPI('kpi-protocols', null);
+
+  if (whale) {
+    const row = whale[0];
+    const val = row?.total_whale_volume || row?.whale_volume || row?.[Object.keys(row)[0]];
+    setKPI('kpi-whale-vol', val ? formatNum(val) : Object.values(row)[0]);
+  } else setKPI('kpi-whale-vol', null);
+
+  if (largest) {
+    const row = largest[0];
+    const val = row?.biggest_transfer_m;
+    setKPI('kpi-largest', val ? '$' + val.toFixed(1) + 'M' : Object.values(row)[2] || '—');
+  } else setKPI('kpi-largest', null);
+
+  if (chains) {
+    const row = chains[0];
+    const val = row?.chain_count || row?.num_chains || row?.[Object.keys(row)[0]];
+    setKPI('kpi-chains', val != null ? val.toLocaleString() : Object.values(row)[0]);
+  } else setKPI('kpi-chains', null);
+}
+
+// ===== CHARTS =====
+const chartColors = ['#00ff88','#4d7cff','#a855f7','#ff6b35','#ffd700','#ff4757','#00d4aa','#7c5cff','#ff8c42','#4ecdc4'];
+
+async function loadCategoryChart() {
+  const rows = await fetchDune(QUERIES.categoryBreakdown);
+  if (!rows || !rows.length) { console.warn('Category chart: no data'); return; }
+  const keys = Object.keys(rows[0]);
+  // Find the label column (string) and value column (number)
+  let labelKey = keys.find(k => typeof rows[0][k] === 'string') || keys[0];
+  let valueKey = keys.find(k => typeof rows[0][k] === 'number') || keys[1];
+  console.log(`Category chart using: label=${labelKey}, value=${valueKey}`);
+  const labels = rows.map(r => r[labelKey]);
+  const values = rows.map(r => r[valueKey]);
+  new Chart(document.getElementById('chart-category'), {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data: values, backgroundColor: chartColors.slice(0, labels.length), borderWidth: 0 }] },
+    options: { responsive: true, plugins: { legend: { position: 'right', labels: { padding: 12, usePointStyle: true, pointStyle: 'circle' } } } }
+  });
+}
+
+async function loadChainChart() {
+  const rows = await fetchDune(QUERIES.chainDistribution, 15);
+  if (!rows || !rows.length) return;
+  const keys = Object.keys(rows[0]);
+  let labelKey = keys.find(k => typeof rows[0][k] === 'string') || keys[0];
+  let valueKey = keys.find(k => typeof rows[0][k] === 'number') || keys[1];
+  const labels = rows.map(r => r[labelKey]);
+  const values = rows.map(r => r[valueKey]);
+  new Chart(document.getElementById('chart-chain'), {
+    type: 'bar',
+    data: { labels, datasets: [{ data: values, backgroundColor: '#4d7cff', borderRadius: 4 }] },
+    options: { responsive: true, indexAxis: 'y', plugins: { legend: { display: false } },
+      scales: { x: { ticks: { callback: v => formatNum(v) }, grid: { color: '#1e1e2e' } }, y: { grid: { display: false } } } }
+  });
+}
+
+async function loadGrowingChart() {
+  const rows = await fetchDune(QUERIES.growing, 10);
+  if (!rows || !rows.length) return;
+  const labels = rows.map(r => r.name || r.protocol || Object.values(r)[0]);
+  const values = rows.map(r => r.change_7d || r.growth_7d || Object.values(r)[1]);
+  new Chart(document.getElementById('chart-growing'), {
+    type: 'bar',
+    data: { labels, datasets: [{ data: values, backgroundColor: '#00ff88', borderRadius: 4 }] },
+    options: { responsive: true, indexAxis: 'y', plugins: { legend: { display: false } },
+      scales: { x: { ticks: { callback: v => v + '%' }, grid: { color: '#1e1e2e' } }, y: { grid: { display: false } } } }
+  });
+}
+
+async function loadDecliningChart() {
+  const rows = await fetchDune(QUERIES.declining, 10);
+  if (!rows || !rows.length) return;
+  const labels = rows.map(r => r.name || r.protocol || Object.values(r)[0]);
+  const values = rows.map(r => r.change_7d || r.decline_7d || Object.values(r)[1]);
+  new Chart(document.getElementById('chart-declining'), {
+    type: 'bar',
+    data: { labels, datasets: [{ data: values, backgroundColor: '#ff4757', borderRadius: 4 }] },
+    options: { responsive: true, indexAxis: 'y', plugins: { legend: { display: false } },
+      scales: { x: { ticks: { callback: v => v + '%' }, grid: { color: '#1e1e2e' } }, y: { grid: { display: false } } } }
+  });
+}
+
+async function loadNetFlowChart() {
+  const rows = await fetchDune(QUERIES.netFlow, 10);
+  if (!rows || !rows.length) return;
+  const labels = rows.map(r => r.token || r.name || Object.values(r)[0]);
+  const values = rows.map(r => r.net_flow || r.flow || Object.values(r)[1]);
+  new Chart(document.getElementById('chart-netflow'), {
+    type: 'bar',
+    data: { labels, datasets: [{ data: values, backgroundColor: values.map(v => v >= 0 ? '#00ff88' : '#ff4757'), borderRadius: 4 }] },
+    options: { responsive: true, plugins: { legend: { display: false } },
+      scales: { y: { ticks: { callback: v => formatNum(v) }, grid: { color: '#1e1e2e' } }, x: { grid: { display: false } } } }
+  });
+}
+
+async function loadMarketCapChart() {
+  const rows = await fetchDune(QUERIES.marketCaps, 10);
+  if (!rows || !rows.length) return;
+  const labels = rows.map(r => r.token || r.name || Object.values(r)[0]);
+  const values = rows.map(r => r.market_cap || r.mcap || Object.values(r)[1]);
+  new Chart(document.getElementById('chart-mcap'), {
+    type: 'bar',
+    data: { labels, datasets: [{ data: values, backgroundColor: '#a855f7', borderRadius: 4 }] },
+    options: { responsive: true, plugins: { legend: { display: false } },
+      scales: { y: { ticks: { callback: v => formatNum(v) }, grid: { color: '#1e1e2e' } }, x: { grid: { display: false } } } }
+  });
+}
+
+// ===== TABLES =====
+function renderTable(tableId, rows, columns) {
+  const tbody = document.querySelector(`#${tableId} tbody`);
+  const thead = document.querySelector(`#${tableId} thead tr`);
+  if (!rows || !rows.length) { tbody.innerHTML = '<tr><td colspan="99" class="api-error" style="text-align:center;padding:1.5rem;">No data</td></tr>'; return; }
+  
+  // Auto-detect: if defined column keys don't match data, use actual keys
+  const actualKeys = Object.keys(rows[0]);
+  const hasMatch = columns.some(col => actualKeys.includes(col.key));
+  
+  if (!hasMatch) {
+    console.warn(`Table ${tableId}: column mismatch. Expected [${columns.map(c=>c.key)}], got [${actualKeys}]. Using auto-detect.`);
+    columns = actualKeys.slice(0, 6).map(k => {
+      const sampleVal = rows[0][k];
+      let fmt = 'text';
+      if (typeof sampleVal === 'number') {
+        if (Math.abs(sampleVal) < 200 && k.toLowerCase().includes('change')) fmt = 'pct';
+        else if (sampleVal > 1000) fmt = 'number';
+        else fmt = 'int';
+      }
+      if (typeof sampleVal === 'string' && sampleVal.startsWith('0x')) fmt = 'addr';
+      return { key: k, format: fmt };
+    });
+    // Update thead
+    thead.innerHTML = columns.map(c => `<th>${c.key.replace(/_/g,' ')}</th>`).join('');
+  }
+  
+  tbody.innerHTML = rows.map(row => {
+    return '<tr>' + columns.map(col => {
+      let val = row[col.key] ?? '—';
+      if (col.format === 'number' && typeof val === 'number') val = formatNum(val);
+      if (col.format === 'pct' && typeof val === 'number') {
+        const cls = val >= 0 ? 'positive' : 'negative';
+        val = `<span class="${cls}">${val >= 0 ? '+' : ''}${val.toFixed(1)}%</span>`;
+      }
+      if (col.format === 'addr') val = shortAddr(val);
+      if (col.format === 'int' && typeof val === 'number') val = val.toLocaleString();
+      return `<td>${val}</td>`;
+    }).join('') + '</tr>';
+  }).join('');
+}
+
+async function loadLeaderboard() {
+  const rows = await fetchDune(QUERIES.leaderboard, 25);
+  renderTable('table-leaderboard', rows, [
+    { key: 'name', format: 'text' },
+    { key: 'tvl', format: 'number' },
+    { key: 'category_type', format: 'text' },
+    { key: 'change_1d', format: 'pct' },
+    { key: 'change_7d', format: 'pct' },
+    { key: 'num_chains', format: 'int' },
+  ]);
+}
+
+async function loadTreasury() {
+  const rows = await fetchDune(QUERIES.treasury);
+  renderTable('table-treasury', rows, [
+    { key: 'token', format: 'text' },
+    { key: 'total_minted', format: 'number' },
+    { key: 'total_burned', format: 'number' },
+    { key: 'net_flow', format: 'number' },
+    { key: 'total_txns', format: 'int' },
+  ]);
+}
+
+async function loadConcentration() {
+  const rows = await fetchDune(QUERIES.concentration);
+  renderTable('table-concentration', rows, [
+    { key: 'token', format: 'text' },
+    { key: 'total_transfers', format: 'int' },
+    { key: 'unique_senders', format: 'int' },
+    { key: 'unique_receivers', format: 'int' },
+    { key: 'est_unique_wallets', format: 'int' },
+  ]);
+}
+
+async function loadWhaleTransfers() {
+  const rows = await fetchDune(QUERIES.whaleTransfers, 15);
+  renderTable('table-whale', rows, [
+    { key: 'token', format: 'text' },
+    { key: 'type', format: 'text' },
+    { key: 'value', format: 'number' },
+    { key: 'from', format: 'addr' },
+    { key: 'to', format: 'addr' },
+  ]);
+}
+
+async function loadYieldTokens() {
+  const rows = await fetchDune(QUERIES.yieldTokens);
+  renderTable('table-yield', rows, [
+    { key: 'token', format: 'text' },
+    { key: 'name', format: 'text' },
+    { key: 'price', format: 'number' },
+    { key: 'market_cap', format: 'number' },
+    { key: 'change_7d', format: 'pct' },
+  ]);
+}
+
+async function loadGovernance() {
+  const rows = await fetchDune(QUERIES.governance);
+  renderTable('table-governance', rows, [
+    { key: 'token', format: 'text' },
+    { key: 'price', format: 'number' },
+    { key: 'market_cap', format: 'number' },
+    { key: 'change_24h', format: 'pct' },
+    { key: 'change_7d', format: 'pct' },
+  ]);
+}
+
+// ===== INIT =====
+async function init() {
+  // Load KPIs first (fast)
+  loadKPIs();
+  // Load charts
+  loadCategoryChart();
+  loadChainChart();
+  loadGrowingChart();
+  loadDecliningChart();
+  loadNetFlowChart();
+  loadMarketCapChart();
+  // Load tables
+  loadLeaderboard();
+  loadTreasury();
+  loadConcentration();
+  loadWhaleTransfers();
+  loadYieldTokens();
+  loadGovernance();
+}
+
+// Start when DOM ready
+document.addEventListener('DOMContentLoaded', init);
+</script>
+
+</body>
+</html>
